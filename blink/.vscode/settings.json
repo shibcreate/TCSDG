@@ -1,5 +1,8 @@
 {
     "C_Cpp.intelliSenseEngine": "default",
     "idf.espIdfPathWin": "C:\\Users\\jorda\\esp\\v5.4\\esp-idf",
-    "idf.toolsPathWin": "C:\\Users\\jorda\\.espressif"
+    "idf.toolsPathWin": "C:\\Users\\jorda\\.espressif",
+    "idf.openOcdConfigs": [
+        "board/esp32s3-builtin.cfg"
+    ]
 }
