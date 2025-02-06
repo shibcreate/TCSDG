@@ -4,5 +4,7 @@
     "idf.toolsPathWin": "C:\\Users\\jorda\\.espressif",
     "idf.openOcdConfigs": [
         "board/esp32s3-builtin.cfg"
-    ]
+    ],
+    "idf.portWin": "COM3",
+    "idf.flashType": "UART"
 }

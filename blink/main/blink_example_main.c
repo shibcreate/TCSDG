@@ -40,7 +40,7 @@ static void blink_led(void)
         led_strip_clear(led_strip);
     }
 }
-//hi
+
 static void configure_led(void)
 {
     ESP_LOGI(TAG, "Example configured to blink addressable LED!");
