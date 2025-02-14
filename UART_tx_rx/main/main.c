@@ -1,37 +1,60 @@
 #include <stdio.h>
 #include <string.h>
+#include "driver/uart.h"
 #include "freertos/FreeRTOS.h"
 #include "freertos/task.h"
-#include "driver/uart.h"
+#include <stdlib.h>
+#define TAG "UART_SERIAL"
+#define UART_NUM UART_NUM_0
+#define BUF_SIZE 128
 
-char *tx_data = "Hi i am under the water from esp32";
-char rx_data[128];
+void app_main() {
+    
+    printf("%s: UART Serial Example Started\n", TAG);
+    uint8_t buffer[BUF_SIZE];
+    int len;
+    int counter = 0;  // Counter to track time for logging
 
-void app_main(void)
-{
+    // Configure UART parameters
+    uart_config_t uart_config = {
+        .baud_rate = 115200,
+        .data_bits = UART_DATA_8_BITS,
+        .parity = UART_PARITY_DISABLE,
+        .stop_bits = UART_STOP_BITS_1,
+        .flow_ctrl = UART_HW_FLOWCTRL_DISABLE
+    };
+    uart_param_config(UART_NUM, &uart_config);
+    uart_driver_install(UART_NUM, BUF_SIZE * 2, 0, 0, NULL, 0);
 
-uart_config_t uart_config = {
-    .baud_rate = 9600,
-    .data_bits = UART_DATA_8_BITS,
-    .parity = UART_PARITY_DISABLE,
-    .stop_bits = UART_STOP_BITS_1,
-    .flow_ctrl = UART_HW_FLOWCTRL_DISABLE,
-    .source_clk = UART_SCLK_APB,
-};
+    printf("%s: Open PuTTY, connect to the correct COM port, type your message, and press Enter to send.\n", TAG);
+    while (1) {
+        int number = rand()%100;
+        // Read data from UART
+        len = uart_read_bytes(UART_NUM, buffer, BUF_SIZE - 1, 10 / portTICK_PERIOD_MS);
+        if (len > 0) {
+            buffer[len] = '\0'; // Null-terminate received data
+            printf("%s: Received: %s\n", TAG, buffer);
 
-uart_param_config(UART_NUM_0, &uart_config);
-//uart_set_pin(UART_NUM_0, 17, 16, UART_PIN_NO_CHANGE, UART_PIN_NO_CHANGE);
-uart_driver_install(UART_NUM_0, 1024, 0, 0, NULL, 0);
+            // Echo data back
+            uart_write_bytes(UART_NUM, (const char*) buffer, len);
+        }
 
-while(1){
-    uart_write_bytes(UART_NUM_0, tx_data, strlen(tx_data));
-    int len = uart_read_bytes(UART_NUM_0, rx_data, 128, pdMS_TO_TICKS(5));
-    if(len>0){
-        rx_data[len] = '\0';
-        printf("Length: %d, Data: %s\n", len, rx_data);
-        fflush(stdout);
+        // Print periodic message every 5 seconds
+        if (counter >= 10) {  // 500 10ms = 5000ms (5 seconds)
+            printf("%s: Ground_Speed: %d\n", TAG, number);
+            printf("%s: MCM_Voltage_Info: %d\n", TAG, number);
+            counter = 0;  // Reset counter
+        }
+
+        counter++;  // Increment counter every loop iteration
+        vTaskDelay(10 / portTICK_PERIOD_MS);  // Delay to avoid busy-waiting
     }
-    vTaskDelay(500/portTICK_PERIOD_MS);
 }
 
-}
+/*
+
+printf("Ground_Speed: %02d\n",i+60);
+
+printf("MCM_Voltage_Info: %02d\n",i+21);
+
+*/

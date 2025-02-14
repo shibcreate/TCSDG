@@ -1,7 +1,7 @@
 {
     "version":            "1.1",
     "project_name":       "hello_world",
-    "project_version":    "2c0e095-dirty",
+    "project_version":    "5d53442-dirty",
     "project_path":       "C:/Users/jorda/VSCRepo/TCSDG/hello_world",
     "idf_path":           "C:/Users/jorda/esp/v5.4/esp-idf",
     "build_dir":          "C:/Users/jorda/VSCRepo/TCSDG/hello_world/build",
