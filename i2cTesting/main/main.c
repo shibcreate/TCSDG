@@ -7,7 +7,7 @@
 #include "esp_lcd_types.h"
 #include "esp_lcd_io_i2c.h"
 #include "esp_lcd_panel_ssd1306.h"
-
+//help
 // Define I2C parameters
 #define I2C_MASTER_NUM      I2C_NUM_0
 #define I2C_MASTER_SDA      GPIO_NUM_10  // Change to your SDA pin
