@@ -1,0 +1,16 @@
+{
+    "C_Cpp.intelliSenseEngine": "default",
+    "idf.espIdfPathWin": "C:\\Users\\jorda\\esp\\v5.4\\esp-idf",
+    "idf.openOcdConfigs": [
+        "board/esp32s3-builtin.cfg"
+    ],
+    "idf.portWin": "COM6",
+    "idf.toolsPathWin": "C:\\Users\\jorda\\.espressif",
+    "files.associations": {
+        "stdio.h": "c",
+        "i2c_master.h": "c",
+        "esp_lcd_panel_ops.h": "c",
+        "esp_lcd_types.h": "c"
+    },
+    "idf.flashType": "UART"
+}
