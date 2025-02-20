@@ -12,7 +12,10 @@
         "esp_lcd_panel_ops.h": "c",
         "esp_lcd_types.h": "c",
         "lvgl.h": "c",
-        "gpio.h": "c"
+        "gpio.h": "c",
+        "esp_lcd_panel_ssd1306.h": "c",
+        "esp_lcd_panel_io.h": "c",
+        "cstdint": "c"
     },
     "idf.flashType": "UART",
     "idf.port": "/dev/tty.usbmodem21201",

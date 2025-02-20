@@ -7,7 +7,7 @@
 #include "esp_lcd_types.h"
 #include "esp_lcd_io_i2c.h"
 #include "esp_lcd_panel_ssd1306.h"
-#include "lvgl/lvgl.h"
+#include "lvgl.h"
 #include "driver/gpio.h"
 
 // Define I2C parameters
@@ -49,11 +49,11 @@ void init_i2c_bus() {
 
 i2c_device_config_t dev_cfg = {
     .dev_addr_length = I2C_ADDR_BIT_LEN_7,  // Use 7-bit addressing
-    .device_address = 0x3C,                // MPU-6050 default address
+    .device_address = 0x3C,                
     .scl_speed_hz = 100000,                // Set clock speed to 100 kHz
 };
 
-// Handle for the MPU-6050 device
+
 i2c_master_dev_handle_t dev_handle;
 
 // Initialize LCD IO interface
@@ -106,6 +106,38 @@ void setup_lvgl_display() {
     ESP_LOGI(TAG, "LVGL display initialized successfully.");
 }
 
+uint8_t init_sequence[] = {
+    0x00,  // Command mode
+    0xAE,  // Display OFF
+    0x20, 0x00,  // Set memory addressing mode (0x00 = Horizontal mode)
+    0x21, 0x00, 0x7F,  // Set column address range (0 to 127)
+    0x22, 0x00, 0x07,  // Set page address range (0 to 7)
+    0xA8, 0x3F,  // Set multiplex ratio
+    0xD3, 0x00,  // Set display offset
+    0x40,  // Set display start line to 0
+    0x8D, 0x14,  // Enable charge pump
+    0xA1,  // Set segment re-map (flip horizontally)
+    0xC8,  // Set COM output scan direction (flip vertically)
+    0xDA, 0x12,  // Set COM pins hardware configuration
+    0x81, 0x7F,  // Set contrast
+    0xD9, 0xF1,  // Set pre-charge period
+    0xDB, 0x40,  // Set VCOMH deselect level
+    0xA4,  // Resume from RAM content display
+    0xA6,  // Normal display mode (not inverted)
+    0xAF   // Display ON
+};
+size_t length = sizeof(init_sequence);
+i2c_master_transmit(dev_handle, init_sequence, 30, 100);
+
+uint8_t set_cursor[] = {
+    0x00,  // Command mode
+    0x21, 0x00, 0x7F,  // Set column address from 0 to 127
+    0x22, 0x00, 0x07   // Set page address from 0 to 7
+};
+i2c_master_transmit(dev_handle, set_cursor, 7, 100);
+
+size_t length2 = sizeof(set_cursor);
+
 // Initialize LCD panel and LVGL
 void init_lcd_panel() {
     esp_lcd_panel_ssd1306_config_t ssd1306_config = {
@@ -139,8 +171,9 @@ void lcd_display_text(const char *text) {
     lv_obj_t *label = lv_label_create(lv_screen_active());
     lv_label_set_text(label, text);
     lv_obj_align(label, LV_ALIGN_CENTER, 0, 0);
-    uint8_t buffer1 = 0xA4;
-    i2c_master_transmit(dev_handle, &buffer1,1,100);
+    uint8_t *writeData = (uint8_t*)"hi";
+    uint8_t buff1[2] = {0x40, *writeData};
+    i2c_master_transmit(dev_handle, buff1,2,100);
 }
 
 // Main application
@@ -158,3 +191,4 @@ void app_main() {
         vTaskDelay(pdMS_TO_TICKS(10));  // Delay 10ms
     }
 }
+
