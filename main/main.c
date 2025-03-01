@@ -75,45 +75,60 @@ void init_uart() {
 }
 
 // UART task to read input and send LoRa messages
+// Add this global flag
+static bool is_transmitting = false;
+
 void task_uart(void *pvParameters) {
-    uint8_t data[128];  // Buffer to store UART data
+    uint8_t data[128];
+
     while (1) {
-        // Read data from UART (USB-C serial input)
         int length = uart_read_bytes(UART_PORT_NUM, data, sizeof(data), 20 / portTICK_PERIOD_MS);
 
         if (length > 0) {
-            // Convert received data to string
             data[length] = '\0';
             ESP_LOGI(TAG_MAIN, "Received data: %s", data);
 
-            // Check if input is "1" or "2" and send corresponding LoRa message
             if (data[0] == '1') {
-                send_drs_message(0);  // Send DRS: 0
-            } else if (data[0] == '2') {
-                send_drs_message(1);  // Send DRS: 1
-            } else {
-                ESP_LOGI(TAG_MAIN, "Invalid input received: %c", data[0]);
+                is_transmitting = true;  // Enable continuous transmission
+                ESP_LOGI(TAG_MAIN, "Switched to continuous transmission mode.");
+            } else if (data[0] == '0') {
+                is_transmitting = false; // Re-enable receiving mode
+                ESP_LOGI(TAG_MAIN, "Switched back to receive mode.");
             }
         }
 
-        vTaskDelay(pdMS_TO_TICKS(100));  // Delay to avoid excessive CPU usage
+        vTaskDelay(pdMS_TO_TICKS(100));  // Small delay
     }
 }
 
-// LoRa message handling task
 void task_lora(void *pvParameters) {
     ESP_LOGI(TAG_SECONDARY, "Listening for LoRa messages...");
 
     uint8_t rxData[256];
-    while (1) {
-        // LoRa receive process
-        uint8_t rxLen = LoRaReceive(rxData, sizeof(rxData));
-        if (rxLen > 0) {
-            ESP_LOGI(TAG_SECONDARY, "Received %d byte packet: [%.*s]", rxLen, rxLen, rxData);
-            parse_lora_message(rxData, rxLen);  // Parse the LoRa message
-        }
 
-        vTaskDelay(pdMS_TO_TICKS(100));  // Small delay to avoid excessive CPU usage
+    while (1) {
+        if (is_transmitting) {
+            // Continuous LoRa transmission
+            uint8_t txData[256];
+            int txLen = sprintf((char *)txData, "Continuous LoRa message");
+
+            if (LoRaSend(txData, txLen, SX126x_TXMODE_SYNC)) {
+                ESP_LOGI(TAG_SECONDARY, "Sent: %s", txData);
+            } else {
+                ESP_LOGE(TAG_SECONDARY, "Failed to send LoRa message");
+            }
+
+            vTaskDelay(pdMS_TO_TICKS(1000));  // Send every second
+        } else {
+            // Only receive if not transmitting
+            uint8_t rxLen = LoRaReceive(rxData, sizeof(rxData));
+            if (rxLen > 0) {
+                ESP_LOGI(TAG_SECONDARY, "Received %d byte packet: [%.*s]", rxLen, rxLen, rxData);
+                parse_lora_message(rxData, rxLen);
+            }
+
+            vTaskDelay(pdMS_TO_TICKS(100));
+        }
     }
 }
 
