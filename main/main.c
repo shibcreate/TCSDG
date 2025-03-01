@@ -42,17 +42,17 @@ void parse_lora_message(uint8_t *rxData, uint8_t rxLen) {
     message[rxLen] = '\0';  // Null-terminate the string
 
     // Check if the message contains MCM_Voltage_Info
-    if (strstr(message, "MCM_Voltage_Info") != NULL) {
+    if (strstr(message, "Pack_Voltage") != NULL) {
         int value = 0;
-        if (sscanf(message, "MCM_Voltage_Info: %d", &value) == 1) {
+        if (sscanf(message, "Pack_Voltage: %d", &value) == 1) {
             MCM_Voltage_Info = value;  // Update MCM_Voltage_Info with the extracted value
             ESP_LOGI(TAG_SECONDARY, "Updated MCM_Voltage_Info to %d", MCM_Voltage_Info);
         }
     }
     // Check if the message contains Ground_Speed
-    else if (strstr(message, "Ground_Speed") != NULL) {
+    else if (strstr(message, "MCM_Motor_Speed") != NULL) {
         int value = 0;
-        if (sscanf(message, "Ground_Speed: %d", &value) == 1) {
+        if (sscanf(message, "MCM_Motor_Speed: %d", &value) == 1) {
             Ground_Speed = value;  // Update Ground_Speed with the extracted value
             ESP_LOGI(TAG_SECONDARY, "Updated Ground_Speed to %d", Ground_Speed);
         }
