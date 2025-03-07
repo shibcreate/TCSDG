@@ -76,8 +76,10 @@ void init_uart() {
 
 // UART task to read input and send LoRa messages
 // Add this global flag and the transmission timeout duration
+// UART task to read input and send LoRa messages
 static bool is_transmitting = false;
 static TickType_t transmit_end_time = 0; // Stores when the transmission should stop
+static int drsMode = 0;  // Variable to store the current DRS mode
 
 void task_uart(void *pvParameters) {
     uint8_t data[128];
@@ -90,12 +92,18 @@ void task_uart(void *pvParameters) {
             ESP_LOGI(TAG_MAIN, "Received data: %s", data);
 
             if (data[0] == '1') {
+                drsMode = 1;  // Set to Manual mode
                 is_transmitting = true;  // Enable continuous transmission
-                transmit_end_time = xTaskGetTickCount() + pdMS_TO_TICKS(20000); // Set the transmission to last 15 seconds
-                ESP_LOGI(TAG_MAIN, "Switched to continuous transmission mode for 5 seconds.");
+                transmit_end_time = xTaskGetTickCount() + pdMS_TO_TICKS(15000); // Set the transmission to last 15 seconds
+                ESP_LOGI(TAG_MAIN, "Switched to DRS: Manual mode for 15 seconds.");
             } else if (data[0] == '0') {
-                is_transmitting = false; // Re-enable receiving mode
-                ESP_LOGI(TAG_MAIN, "Switched back to receive mode.");
+                drsMode = 0;  // Set to Auto mode
+                is_transmitting = true;  // Enable continuous transmission
+                transmit_end_time = xTaskGetTickCount() + pdMS_TO_TICKS(15000); // Set the transmission to last 15 seconds
+                ESP_LOGI(TAG_MAIN, "Switched to DRS: Auto mode for 15 seconds.");
+            } else {
+                is_transmitting = false;  // Stop transmission if invalid input
+                ESP_LOGI(TAG_MAIN, "Invalid input, stopped transmission.");
             }
         }
 
@@ -110,14 +118,16 @@ void task_lora(void *pvParameters) {
 
     while (1) {
         if (is_transmitting) {
-            // Check if transmission should stop after 5 seconds
+            // Check if transmission should stop after 15 seconds
             if (xTaskGetTickCount() >= transmit_end_time) {
-                is_transmitting = false;  // Stop transmission after 5 seconds
-                ESP_LOGI(TAG_MAIN, "Transmission stopped after 5 seconds.");
+                is_transmitting = false;  // Stop transmission after 15 seconds
+                ESP_LOGI(TAG_MAIN, "Transmission stopped after 15 seconds.");
             } else {
                 // Continuous LoRa transmission
                 uint8_t txData[256];
-                int txLen = sprintf((char *)txData, "Continuous LoRa message");
+                const char *drsMessage = (drsMode == 1) ? "DRS: Manual" : "DRS: Auto"; // Select the message based on the DRS mode
+
+                int txLen = sprintf((char *)txData, "%s", drsMessage);
 
                 if (LoRaSend(txData, txLen, SX126x_TXMODE_SYNC)) {
                     ESP_LOGI(TAG_SECONDARY, "Sent: %s", txData);
