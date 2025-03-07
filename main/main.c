@@ -75,8 +75,9 @@ void init_uart() {
 }
 
 // UART task to read input and send LoRa messages
-// Add this global flag
+// Add this global flag and the transmission timeout duration
 static bool is_transmitting = false;
+static TickType_t transmit_end_time = 0; // Stores when the transmission should stop
 
 void task_uart(void *pvParameters) {
     uint8_t data[128];
@@ -90,7 +91,8 @@ void task_uart(void *pvParameters) {
 
             if (data[0] == '1') {
                 is_transmitting = true;  // Enable continuous transmission
-                ESP_LOGI(TAG_MAIN, "Switched to continuous transmission mode.");
+                transmit_end_time = xTaskGetTickCount() + pdMS_TO_TICKS(20000); // Set the transmission to last 15 seconds
+                ESP_LOGI(TAG_MAIN, "Switched to continuous transmission mode for 5 seconds.");
             } else if (data[0] == '0') {
                 is_transmitting = false; // Re-enable receiving mode
                 ESP_LOGI(TAG_MAIN, "Switched back to receive mode.");
@@ -108,17 +110,23 @@ void task_lora(void *pvParameters) {
 
     while (1) {
         if (is_transmitting) {
-            // Continuous LoRa transmission
-            uint8_t txData[256];
-            int txLen = sprintf((char *)txData, "Continuous LoRa message");
-
-            if (LoRaSend(txData, txLen, SX126x_TXMODE_SYNC)) {
-                ESP_LOGI(TAG_SECONDARY, "Sent: %s", txData);
+            // Check if transmission should stop after 5 seconds
+            if (xTaskGetTickCount() >= transmit_end_time) {
+                is_transmitting = false;  // Stop transmission after 5 seconds
+                ESP_LOGI(TAG_MAIN, "Transmission stopped after 5 seconds.");
             } else {
-                ESP_LOGE(TAG_SECONDARY, "Failed to send LoRa message");
-            }
+                // Continuous LoRa transmission
+                uint8_t txData[256];
+                int txLen = sprintf((char *)txData, "Continuous LoRa message");
 
-            vTaskDelay(pdMS_TO_TICKS(1000));  // Send every second
+                if (LoRaSend(txData, txLen, SX126x_TXMODE_SYNC)) {
+                    ESP_LOGI(TAG_SECONDARY, "Sent: %s", txData);
+                } else {
+                    ESP_LOGE(TAG_SECONDARY, "Failed to send LoRa message");
+                }
+
+                vTaskDelay(pdMS_TO_TICKS(1000));  // Send every second
+            }
         } else {
             // Only receive if not transmitting
             uint8_t rxLen = LoRaReceive(rxData, sizeof(rxData));
