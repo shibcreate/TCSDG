@@ -1,7 +1,7 @@
 {
     "version":            "1.1",
     "project_name":       "ssd1306",
-    "project_version":    "3c054c00-dirty",
+    "project_version":    "ddba692c-dirty",
     "project_path":       "C:/Users/jorda/VSCRepo/TCSDG/TextDemo",
     "idf_path":           "C:/Users/jorda/esp/v5.4/esp-idf",
     "build_dir":          "C:/Users/jorda/VSCRepo/TCSDG/TextDemo/build",

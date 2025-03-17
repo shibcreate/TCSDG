@@ -4,206 +4,153 @@
 #include "freertos/FreeRTOS.h"
 #include "freertos/task.h"
 #include "esp_log.h"
-
 #include "ssd1306.h"
 #include "font8x8_basic.h"
+#include "esp_chip_info.h"
+#include "esp_flash.h"
+#include "esp_system.h"
+#include "driver/gpio.h"
+#include "driver/uart.h"
+#include <inttypes.h>
+#include "sdkconfig.h"
+#include "esp_sleep.h"
+#include "esp_attr.h"
+#include "esp_timer.h"
+#include "nvs_flash.h"
 
-/*
- You have to set this config value with menuconfig
- CONFIG_INTERFACE
 
- for i2c
- CONFIG_MODEL
- CONFIG_SDA_GPIO
- CONFIG_SCL_GPIO
- CONFIG_RESET_GPIO
-
- for SPI
- CONFIG_CS_GPIO
- CONFIG_DC_GPIO
- CONFIG_RESET_GPIO
-*/
-
+#define BUTTON_PIN 11
 #define tag "SSD1306"
 
+#define BUF_SIZE 128
+
+typedef enum {
+    SENDING_STATE,
+    RECEIVING_STATE,
+    SLEEP_STATE
+} FINITE_STATES;
+
+// Global var for current mode
+FINITE_STATES currentState = 0;
+RTC_DATA_ATTR FINITE_STATES saved_mode;
+
+void IRAM_ATTR button_isr(void *arg) {
+    if (gpio_get_level(BUTTON_PIN) == 0) {
+        currentState = RECEIVING_STATE;  // pressed and hold
+    } else {
+        currentState = SENDING_STATE;  // not pressed
+    }
+}
+
+static TaskHandle_t stateManager = NULL;
+SSD1306_t dev;
+void handleSendState(void);
+void handleReceiveState(void);
+void handleLightSleepState(void);
+void setup_i2c_and_ssd1306();
+
+void stateManagerTask(void* parameter){
+    currentState = SENDING_STATE;
+    TickType_t lastActivityTime = xTaskGetTickCount();
+    for(;;){
+        switch (currentState)
+        {
+        case SENDING_STATE:
+            handleSendState();
+            break;
+        case RECEIVING_STATE:
+            handleReceiveState();
+            break;
+        case SLEEP_STATE:
+            handleLightSleepState();
+            break;
+        default:
+            printf("Default\n");
+            break;
+        }
+        if (xTaskGetTickCount() - lastActivityTime > pdMS_TO_TICKS(10000)){
+            currentState = SLEEP_STATE;
+        }
+
+        vTaskDelay(1000 / portTICK_PERIOD_MS);
+    }
+    
+}
+
+void handleSendState(){
+    printf("M1: Sending\n");
+    ssd1306_clear_screen(&dev, false);
+    ssd1306_display_text(&dev, 2, "Mode: Sending", 13, false);
+}
+void handleReceiveState(){
+    printf("M1: Receiving\n");
+    ssd1306_clear_screen(&dev, false);
+    ssd1306_display_text(&dev, 2, "Mode: Receiving", 15, false);
+}
+
+void handleLightSleepState(){
+    ssd1306_clear_screen(&dev, false);
+    ssd1306_display_text(&dev, 2, "Mode: Sleep", 11, false);
+
+    esp_err_t ret;
+    ret = esp_sleep_enable_ext0_wakeup(BUTTON_PIN, 0);
+
+    printf("\nentering deepsleep\n");
+    fflush(stdout);
+    esp_deep_sleep_start();
+
+}
+
+void setup_i2c_and_ssd1306() {
+    #if CONFIG_I2C_INTERFACE
+        ESP_LOGI(tag, "INTERFACE is i2c");
+        ESP_LOGI(tag, "CONFIG_SDA_GPIO=%d", CONFIG_SDA_GPIO);
+        ESP_LOGI(tag, "CONFIG_SCL_GPIO=%d", CONFIG_SCL_GPIO);
+        ESP_LOGI(tag, "CONFIG_RESET_GPIO=%d", CONFIG_RESET_GPIO);
+        i2c_master_init(&dev, CONFIG_SDA_GPIO, CONFIG_SCL_GPIO, CONFIG_RESET_GPIO);
+    #endif // CONFIG_I2C_INTERFACE
+    
+    #if CONFIG_FLIP
+        dev._flip = true;
+        ESP_LOGW(tag, "Flip upside down");
+    #endif
+    
+    #if CONFIG_SSD1306_128x64
+        ESP_LOGI(tag, "Panel is 128x64");
+        ssd1306_init(&dev, 128, 64);
+    #endif // CONFIG_SSD1306_128x64
+    }
+
+
+int64_t mode_start_time = 0;
 void app_main(void)
 {
-	
-	SSD1306_t dev;
+    esp_err_t ret = nvs_flash_init();
+    if (ret == ESP_ERR_NVS_NO_FREE_PAGES ||
+        ret == ESP_ERR_NVS_NEW_VERSION_FOUND) {
+    ESP_ERROR_CHECK(nvs_flash_erase());
+    ret = nvs_flash_init();
+    }
+    ESP_ERROR_CHECK(ret);
+
+    setup_i2c_and_ssd1306();
+
 	int center, top, bottom;
-	char lineChar[20];
 
-#if CONFIG_I2C_INTERFACE
-	ESP_LOGI(tag, "INTERFACE is i2c");
-	ESP_LOGI(tag, "CONFIG_SDA_GPIO=%d",CONFIG_SDA_GPIO);
-	ESP_LOGI(tag, "CONFIG_SCL_GPIO=%d",CONFIG_SCL_GPIO);
-	ESP_LOGI(tag, "CONFIG_RESET_GPIO=%d",CONFIG_RESET_GPIO);
-	i2c_master_init(&dev, CONFIG_SDA_GPIO, CONFIG_SCL_GPIO, CONFIG_RESET_GPIO);
-#endif // CONFIG_I2C_INTERFACE
-
-#if CONFIG_SPI_INTERFACE
-	ESP_LOGI(tag, "INTERFACE is SPI");
-	ESP_LOGI(tag, "CONFIG_MOSI_GPIO=%d",CONFIG_MOSI_GPIO);
-	ESP_LOGI(tag, "CONFIG_SCLK_GPIO=%d",CONFIG_SCLK_GPIO);
-	ESP_LOGI(tag, "CONFIG_CS_GPIO=%d",CONFIG_CS_GPIO);
-	ESP_LOGI(tag, "CONFIG_DC_GPIO=%d",CONFIG_DC_GPIO);
-	ESP_LOGI(tag, "CONFIG_RESET_GPIO=%d",CONFIG_RESET_GPIO);
-	spi_master_init(&dev, CONFIG_MOSI_GPIO, CONFIG_SCLK_GPIO, CONFIG_CS_GPIO, CONFIG_DC_GPIO, CONFIG_RESET_GPIO);
-#endif // CONFIG_SPI_INTERFACE
-
-#if CONFIG_FLIP
-	dev._flip = true;
-	ESP_LOGW(tag, "Flip upside down");
-#endif
-
-#if CONFIG_SSD1306_128x64
-	ESP_LOGI(tag, "Panel is 128x64");
-	ssd1306_init(&dev, 128, 64);
-#endif // CONFIG_SSD1306_128x64
-#if CONFIG_SSD1306_128x32
-	ESP_LOGI(tag, "Panel is 128x32");
-	ssd1306_init(&dev, 128, 32);
-#endif // CONFIG_SSD1306_128x32
-
-	
-	char buffer[20];
-	char buffer1[20];
-	int voltage = 0;
-	int speed = 0;
-//#if CONFIG_SSD1306_128x64
 	top = 2;
 	center = 3; 
 	bottom = 8;
 
-	while(1){
-	voltage = rand() % 100;
-	speed = rand() % 100;
+	//BUTTON STUFF
+	gpio_set_direction(BUTTON_PIN, GPIO_MODE_INPUT);
+    gpio_pullup_en(BUTTON_PIN);
+    gpio_pulldown_dis(BUTTON_PIN);
+    gpio_set_intr_type(BUTTON_PIN, GPIO_INTR_ANYEDGE);
+    gpio_install_isr_service(0);
+    gpio_isr_handler_add(BUTTON_PIN, button_isr, NULL);
+	//BUTTON STUFF
+
 	ssd1306_clear_screen(&dev, false);
-	sprintf(buffer, "MCM_Voltage: %dV", voltage);
-	sprintf(buffer1, "GndSpeed: %dMPH", speed);
-	ssd1306_display_text(&dev, 3, buffer, strlen(buffer), false);
-	ssd1306_display_text(&dev, 4, buffer1, strlen(buffer1), false);
-
-	vTaskDelay(2000 / portTICK_PERIOD_MS);
-}
-	// ssd1306_clear_line(&dev, 1, false);
-	// ssd1306_clear_line(&dev, 2, false);
-	// ssd1306_clear_line(&dev, 5, false);
-	// ssd1306_clear_line(&dev, 6, false);
-	// ssd1306_clear_line(&dev, 7, false);
-	// ssd1306_clear_line(&dev, 8, false);
-	
-//#endif // CONFIG_SSD1306_128x64
-
-//#if CONFIG_SSD1306_128x32
-	// top = 1;
-	// center = 1;
-	// bottom = 4;
-	// ssd1306_display_text(&dev, 0, "SSD1306 128x32", 14, false);
-	// ssd1306_display_text(&dev, 1, "Hello World!!", 13, false);
-	// //ssd1306_clear_line(&dev, 2, true);
-	// //ssd1306_clear_line(&dev, 3, true);
-	// ssd1306_display_text(&dev, 2, "SSD1306 128x32", 14, true);
-	// ssd1306_display_text(&dev, 3, "Hello World!!", 13, true);
-//#endif // CONFIG_SSD1306_128x32
-	// vTaskDelay(3000 / portTICK_PERIOD_MS);
-	
-	// // Display Count Down
-	// uint8_t image[24];
-	// memset(image, 0, sizeof(image));
-	// ssd1306_display_image(&dev, top, (6*8-1), image, sizeof(image));
-	// ssd1306_display_image(&dev, top+1, (6*8-1), image, sizeof(image));
-	// ssd1306_display_image(&dev, top+2, (6*8-1), image, sizeof(image));
-	// for(int font=0x39;font>0x30;font--) {
-	// 	memset(image, 0, sizeof(image));
-	// 	ssd1306_display_image(&dev, top+1, (7*8-1), image, 8);
-	// 	memcpy(image, font8x8_basic_tr[font], 8);
-	// 	if (dev._flip) ssd1306_flip(image, 8);
-	// 	ssd1306_display_image(&dev, top+1, (7*8-1), image, 8);
-	// 	vTaskDelay(1000 / portTICK_PERIOD_MS);
-	// }
-	
-	// // Scroll Up
-	// ssd1306_clear_screen(&dev, false);
-	// ssd1306_contrast(&dev, 0xff);
-	// ssd1306_display_text(&dev, 0, "---Scroll  UP---", 16, true);
-	// //ssd1306_software_scroll(&dev, 7, 1);
-	// ssd1306_software_scroll(&dev, (dev._pages - 1), 1);
-	// for (int line=0;line<bottom+10;line++) {
-	// 	lineChar[0] = 0x01;
-	// 	sprintf(&lineChar[1], " Line %02d", line);
-	// 	ssd1306_scroll_text(&dev, lineChar, strlen(lineChar), false);
-	// 	vTaskDelay(500 / portTICK_PERIOD_MS);
-	// }
-	// vTaskDelay(3000 / portTICK_PERIOD_MS);
-	
-	// // Scroll Down
-	// ssd1306_clear_screen(&dev, false);
-	// ssd1306_contrast(&dev, 0xff);
-	// ssd1306_display_text(&dev, 0, "--Scroll  DOWN--", 16, true);
-	// //ssd1306_software_scroll(&dev, 1, 7);
-	// ssd1306_software_scroll(&dev, 1, (dev._pages - 1) );
-	// for (int line=0;line<bottom+10;line++) {
-	// 	lineChar[0] = 0x02;
-	// 	sprintf(&lineChar[1], " Line %02d", line);
-	// 	ssd1306_scroll_text(&dev, lineChar, strlen(lineChar), false);
-	// 	vTaskDelay(500 / portTICK_PERIOD_MS);
-	// }
-	// vTaskDelay(3000 / portTICK_PERIOD_MS);
-
-	// // Page Down
-	// ssd1306_clear_screen(&dev, false);
-	// ssd1306_contrast(&dev, 0xff);
-	// ssd1306_display_text(&dev, 0, "---Page	DOWN---", 16, true);
-	// ssd1306_software_scroll(&dev, 1, (dev._pages-1) );
-	// for (int line=0;line<bottom+10;line++) {
-	// 	//if ( (line % 7) == 0) ssd1306_scroll_clear(&dev);
-	// 	if ( (line % (dev._pages-1)) == 0) ssd1306_scroll_clear(&dev);
-	// 	lineChar[0] = 0x02;
-	// 	sprintf(&lineChar[1], " Line %02d", line);
-	// 	ssd1306_scroll_text(&dev, lineChar, strlen(lineChar), false);
-	// 	vTaskDelay(500 / portTICK_PERIOD_MS);
-	// }
-	// vTaskDelay(3000 / portTICK_PERIOD_MS);
-
-	// // Horizontal Scroll
-	// ssd1306_clear_screen(&dev, false);
-	// ssd1306_contrast(&dev, 0xff);
-	// ssd1306_display_text(&dev, center, "Horizontal", 10, false);
-	// ssd1306_hardware_scroll(&dev, SCROLL_RIGHT);
-	// vTaskDelay(5000 / portTICK_PERIOD_MS);
-	// ssd1306_hardware_scroll(&dev, SCROLL_LEFT);
-	// vTaskDelay(5000 / portTICK_PERIOD_MS);
-	// ssd1306_hardware_scroll(&dev, SCROLL_STOP);
-	
-	// // Vertical Scroll
-	// ssd1306_clear_screen(&dev, false);
-	// ssd1306_contrast(&dev, 0xff);
-	// ssd1306_display_text(&dev, center, "Vertical", 8, false);
-	// ssd1306_hardware_scroll(&dev, SCROLL_DOWN);
-	// vTaskDelay(5000 / portTICK_PERIOD_MS);
-	// ssd1306_hardware_scroll(&dev, SCROLL_UP);
-	// vTaskDelay(5000 / portTICK_PERIOD_MS);
-	// ssd1306_hardware_scroll(&dev, SCROLL_STOP);
-	
-	// Invert
-	// ssd1306_clear_screen(&dev, true);
-	// ssd1306_contrast(&dev, 0xff);
-	// ssd1306_display_text(&dev, center, "  Good Bye!!", 12, true);
-	// vTaskDelay(5000 / portTICK_PERIOD_MS);
- 
-
-	// Fade Out
-	//ssd1306_fadeout(&dev);
-	
-//#if 0
-	// Fade Out
-	//for(int contrast=0xff;contrast>0;contrast=contrast-0x20) {
-	//	ssd1306_contrast(&dev, contrast);
-	//	vTaskDelay(40);
-	//}
-//#endif
-
-	// Restart module
-	esp_restart();
+	xTaskCreate(stateManagerTask, "stateManager", 4096, NULL, 10, &stateManager);
+    vTaskSuspend(NULL);
 }
