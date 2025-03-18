@@ -81,6 +81,14 @@ static bool is_transmitting = false;
 static TickType_t transmit_end_time = 0; // Stores when the transmission should stop
 static int drsMode = 0;  // Variable to store the current DRS mode
 
+static bool is_pl_transmitting = false;
+static TickType_t pl_transmit_end_time = 0;
+static int plMode = -1;  // -1 means no PL mode active
+
+static bool is_torque_transmitting = false;
+static TickType_t torque_transmit_end_time = 0;
+static int torqueLimit = -1;  // -1 means no active TorqueLimit transmission
+
 void task_uart(void *pvParameters) {
     uint8_t data[128];
 
@@ -92,22 +100,44 @@ void task_uart(void *pvParameters) {
             ESP_LOGI(TAG_MAIN, "Received data: %s", data);
 
             if (data[0] == '1') {
-                drsMode = 1;  // Set to Manual mode
-                is_transmitting = true;  // Enable continuous transmission
-                transmit_end_time = xTaskGetTickCount() + pdMS_TO_TICKS(15000); // Set the transmission to last 15 seconds
+                drsMode = 1;
+                is_transmitting = true;
+                transmit_end_time = xTaskGetTickCount() + pdMS_TO_TICKS(15000);
                 ESP_LOGI(TAG_MAIN, "Switched to DRS: Manual mode for 15 seconds.");
             } else if (data[0] == '0') {
-                drsMode = 0;  // Set to Auto mode
-                is_transmitting = true;  // Enable continuous transmission
-                transmit_end_time = xTaskGetTickCount() + pdMS_TO_TICKS(15000); // Set the transmission to last 15 seconds
+                drsMode = 0;
+                is_transmitting = true;
+                transmit_end_time = xTaskGetTickCount() + pdMS_TO_TICKS(15000);
                 ESP_LOGI(TAG_MAIN, "Switched to DRS: Auto mode for 15 seconds.");
+            } else if (data[0] == '2') {
+                plMode = 1;
+                is_pl_transmitting = true;
+                pl_transmit_end_time = xTaskGetTickCount() + pdMS_TO_TICKS(15000);
+                ESP_LOGI(TAG_MAIN, "Switched to PL: Mode 1 for 15 seconds.");
+            } else if (data[0] == '3') {
+                plMode = 2;
+                is_pl_transmitting = true;
+                pl_transmit_end_time = xTaskGetTickCount() + pdMS_TO_TICKS(15000);
+                ESP_LOGI(TAG_MAIN, "Switched to PL: Mode 2 for 15 seconds.");
+            } else if (data[0] == '4') {
+                torqueLimit = 200;
+                is_torque_transmitting = true;
+                torque_transmit_end_time = xTaskGetTickCount() + pdMS_TO_TICKS(15000);
+                ESP_LOGI(TAG_MAIN, "Switched to TorqueLimit: 200 for 15 seconds.");
+            } else if (data[0] == '5') {
+                torqueLimit = 150;
+                is_torque_transmitting = true;
+                torque_transmit_end_time = xTaskGetTickCount() + pdMS_TO_TICKS(15000);
+                ESP_LOGI(TAG_MAIN, "Switched to TorqueLimit: 150 for 15 seconds.");
             } else {
-                is_transmitting = false;  // Stop transmission if invalid input
+                is_transmitting = false;
+                is_pl_transmitting = false;
+                is_torque_transmitting = false;
                 ESP_LOGI(TAG_MAIN, "Invalid input, stopped transmission.");
             }
         }
 
-        vTaskDelay(pdMS_TO_TICKS(100));  // Small delay
+        vTaskDelay(pdMS_TO_TICKS(100));
     }
 }
 
@@ -118,15 +148,12 @@ void task_lora(void *pvParameters) {
 
     while (1) {
         if (is_transmitting) {
-            // Check if transmission should stop after 15 seconds
             if (xTaskGetTickCount() >= transmit_end_time) {
-                is_transmitting = false;  // Stop transmission after 15 seconds
-                ESP_LOGI(TAG_MAIN, "Transmission stopped after 15 seconds.");
+                is_transmitting = false;
+                ESP_LOGI(TAG_MAIN, "DRS transmission stopped after 15 seconds.");
             } else {
-                // Continuous LoRa transmission
                 uint8_t txData[256];
-                const char *drsMessage = (drsMode == 1) ? "DRS: Manual" : "DRS: Auto"; // Select the message based on the DRS mode
-
+                const char *drsMessage = (drsMode == 1) ? "DRS: Manual" : "DRS: Auto";
                 int txLen = sprintf((char *)txData, "%s", drsMessage);
 
                 if (LoRaSend(txData, txLen, SX126x_TXMODE_SYNC)) {
@@ -135,10 +162,47 @@ void task_lora(void *pvParameters) {
                     ESP_LOGE(TAG_SECONDARY, "Failed to send LoRa message");
                 }
 
-                vTaskDelay(pdMS_TO_TICKS(1000));  // Send every second
+                vTaskDelay(pdMS_TO_TICKS(1000));
             }
-        } else {
-            // Only receive if not transmitting
+        } 
+        else if (is_pl_transmitting) {
+            if (xTaskGetTickCount() >= pl_transmit_end_time) {
+                is_pl_transmitting = false;
+                ESP_LOGI(TAG_MAIN, "PL transmission stopped after 15 seconds.");
+            } else {
+                uint8_t txData[256];
+                const char *plMessage = (plMode == 1) ? "PL: Mode 1" : "PL: Mode 2";
+                int txLen = sprintf((char *)txData, "%s", plMessage);
+
+                if (LoRaSend(txData, txLen, SX126x_TXMODE_SYNC)) {
+                    ESP_LOGI(TAG_SECONDARY, "Sent: %s", txData);
+                } else {
+                    ESP_LOGE(TAG_SECONDARY, "Failed to send PL message");
+                }
+
+                vTaskDelay(pdMS_TO_TICKS(1000));
+            }
+        } 
+        else if (is_torque_transmitting) {
+            if (xTaskGetTickCount() >= torque_transmit_end_time) {
+                is_torque_transmitting = false;
+                ESP_LOGI(TAG_MAIN, "TorqueLimit transmission stopped after 15 seconds.");
+            } else {
+                uint8_t txData[256];
+                char torqueMessage[50];
+                sprintf(torqueMessage, "TorqueLimit: %d", torqueLimit);
+                int txLen = sprintf((char *)txData, "%s", torqueMessage);
+
+                if (LoRaSend(txData, txLen, SX126x_TXMODE_SYNC)) {
+                    ESP_LOGI(TAG_SECONDARY, "Sent: %s", txData);
+                } else {
+                    ESP_LOGE(TAG_SECONDARY, "Failed to send TorqueLimit message");
+                }
+
+                vTaskDelay(pdMS_TO_TICKS(1000));
+            }
+        } 
+        else {
             uint8_t rxLen = LoRaReceive(rxData, sizeof(rxData));
             if (rxLen > 0) {
                 ESP_LOGI(TAG_SECONDARY, "Received %d byte packet: [%.*s]", rxLen, rxLen, rxData);
