@@ -8,6 +8,82 @@
     <link rel="stylesheet" href="app.css">
     <script async src="app.js"></script>
     <title>TCSDG - SR Telemetry</title>
+    <style>
+      body {
+        background-color: #121212;
+        color: white;
+        font-family: Arial, sans-serif;
+      }
+
+      header {
+        text-align: center;
+        padding: 20px;
+      }
+
+      #Sensor {
+        background-color: #1e1e1e;
+        padding: 20px;
+        border-radius: 10px;
+        margin: 20px;
+      }
+
+      #Sensor h2 {
+        color: #ffa500;
+      }
+
+      label {
+        font-size: 18px;
+        color: #ccc;
+      }
+
+      .sensor-container {
+        display: flex;
+        justify-content: space-between;
+        margin: 10px 0;
+        font-size: 20px;
+      }
+
+      .sensor-value {
+        color: #ffa500;
+        font-weight: bold;
+        font-size: 24px;
+      }
+
+      .sensor-unit {
+        color: #ccc;
+        font-size: 18px;
+      }
+
+      #OTA {
+        background-color: #1e1e1e;
+        padding: 20px;
+        border-radius: 10px;
+        margin: 20px;
+      }
+
+      .buttons input {
+        background-color: #ffa500;
+        color: white;
+        border: none;
+        padding: 10px 20px;
+        cursor: pointer;
+        margin: 10px;
+        border-radius: 5px;
+      }
+
+      .buttons input:hover {
+        background-color: #ff8c00;
+      }
+
+      h4 {
+        color: #ffa500;
+      }
+
+      .status {
+        font-size: 18px;
+        color: #ff6347;
+      }
+    </style>
   </head>
   <body>
     <header>
@@ -16,35 +92,45 @@
 
     <div id="Sensor">
       <h2>Sensor Readings</h2>
-      <label for="pack_voltage_value">Pack Voltage: </label>
-      <div id="pack_voltage_value"></div>
-      <label>V</label><br>
 
-      <label for="motor_speed_value">Motor Speed: </label>
-      <div id="motor_speed_value"></div>
-      <label>RPM</label><br>
+      <div class="sensor-container">
+        <label for="pack_voltage_value">Pack Voltage:</label>
+        <div id="pack_voltage_value" class="sensor-value"></div>
+        <div class="sensor-unit">V</div>
+      </div>
 
-      <label for="vcu_faults_value">VCU Faults: </label>
-      <div id="vcu_faults_value"></div>
-      <label>Faults</label><br>
+      <div class="sensor-container">
+        <label for="motor_speed_value">Motor Speed:</label>
+        <div id="motor_speed_value" class="sensor-value"></div>
+        <div class="sensor-unit">RPM</div>
+      </div>
 
-      <label for="bms_faults_value">BMS Faults: </label>
-      <div id="bms_faults_value"></div>
-      <label>Faults</label><br>
+      <div class="sensor-container">
+        <label for="vcu_faults_value">VCU Faults:</label>
+        <div id="vcu_faults_value" class="sensor-value"></div>
+        <div class="sensor-unit">Faults</div>
+      </div>
+
+      <div class="sensor-container">
+        <label for="bms_faults_value">BMS Faults:</label>
+        <div id="bms_faults_value" class="sensor-value"></div>
+        <div class="sensor-unit">Faults</div>
+      </div>
     </div>
+
     <hr>
 
     <div id="OTA">
       <h2>ESP32 Firmware Update</h2>
       <label id="latest_firmware_label">Latest Firmware: </label>
-      <div id="latest_firmware"></div> 
+      <div id="latest_firmware" class="sensor-value"></div> 
       <input type="file" id="selected_file" accept=".bin" style="display: none;" onchange="getFileInfo()" />
       <div class="buttons">
         <input type="button" value="Select File" onclick="document.getElementById('selected_file').click();" />
         <input type="button" value="Update Firmware" onclick="updateFirmware()" />
       </div>
       <h4 id="file_info"></h4>
-      <h4 id="ota_update_status"></h4>
+      <h4 id="ota_update_status" class="status"></h4>
     </div>
     <hr>
 

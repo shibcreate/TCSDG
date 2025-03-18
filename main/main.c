@@ -48,7 +48,7 @@ void parse_lora_message(uint8_t *rxData, uint8_t rxLen) {
         int value = 0;
         if (sscanf(message, "Pack_Voltage: %d", &value) == 1) {
             Pack_Voltage = value;  // Update Pack_Voltage
-            ESP_LOGI(TAG_SECONDARY, "Updated Pack_Voltage to %d", Pack_Voltage);
+            //ESP_LOGI(TAG_SECONDARY, "Updated Pack_Voltage to %d", Pack_Voltage);
         }
     }
     // Check if the message contains MCM_Motor_Speed
@@ -56,7 +56,7 @@ void parse_lora_message(uint8_t *rxData, uint8_t rxLen) {
         int value = 0;
         if (sscanf(message, "MCM_Motor_Speed: %d", &value) == 1) {
             MCM_Motor_Speed = value;  // Update MCM_Motor_Speed
-            ESP_LOGI(TAG_SECONDARY, "Updated MCM_Motor_Speed to %d", MCM_Motor_Speed);
+            //ESP_LOGI(TAG_SECONDARY, "Updated MCM_Motor_Speed to %d", MCM_Motor_Speed);
         }
     }
     // Check if the message contains VCU_Faults
@@ -64,7 +64,7 @@ void parse_lora_message(uint8_t *rxData, uint8_t rxLen) {
         int value = 0;
         if (sscanf(message, "VCU_FAULTS: %d", &value) == 1) {
             VCU_Faults = value;  // Update VCU_Faults
-            ESP_LOGI(TAG_SECONDARY, "Updated VCU_Faults to %d", VCU_Faults);
+            //ESP_LOGI(TAG_SECONDARY, "Updated VCU_Faults to %d", VCU_Faults);
         }
     }
     // Check if the message contains BMS_Faults
@@ -72,7 +72,7 @@ void parse_lora_message(uint8_t *rxData, uint8_t rxLen) {
         int value = 0;
         if (sscanf(message, "BMS_FAULTS: %d", &value) == 1) {
             BMS_Faults = value;  // Update BMS_Faults
-            ESP_LOGI(TAG_SECONDARY, "Updated BMS_Faults to %d", BMS_Faults);
+            //ESP_LOGI(TAG_SECONDARY, "Updated BMS_Faults to %d", BMS_Faults);
         }
     }
 }
@@ -115,43 +115,43 @@ void task_uart(void *pvParameters) {
 
         if (length > 0) {
             data[length] = '\0';
-            ESP_LOGI(TAG_MAIN, "Received data: %s", data);
+            //ESP_LOGI(TAG_MAIN, "Received data: %s", data);
 
             if (data[0] == '1') {
                 drsMode = 1;
                 is_transmitting = true;
                 transmit_end_time = xTaskGetTickCount() + pdMS_TO_TICKS(15000);
-                ESP_LOGI(TAG_MAIN, "Switched to DRS: Manual mode for 15 seconds.");
+                //ESP_LOGI(TAG_MAIN, "Switched to DRS: Manual mode for 15 seconds.");
             } else if (data[0] == '0') {
                 drsMode = 0;
                 is_transmitting = true;
                 transmit_end_time = xTaskGetTickCount() + pdMS_TO_TICKS(15000);
-                ESP_LOGI(TAG_MAIN, "Switched to DRS: Auto mode for 15 seconds.");
+                //ESP_LOGI(TAG_MAIN, "Switched to DRS: Auto mode for 15 seconds.");
             } else if (data[0] == '2') {
                 plMode = 1;
                 is_pl_transmitting = true;
                 pl_transmit_end_time = xTaskGetTickCount() + pdMS_TO_TICKS(15000);
-                ESP_LOGI(TAG_MAIN, "Switched to PL: Mode 1 for 15 seconds.");
+                //ESP_LOGI(TAG_MAIN, "Switched to PL: Mode 1 for 15 seconds.");
             } else if (data[0] == '3') {
                 plMode = 2;
                 is_pl_transmitting = true;
                 pl_transmit_end_time = xTaskGetTickCount() + pdMS_TO_TICKS(15000);
-                ESP_LOGI(TAG_MAIN, "Switched to PL: Mode 2 for 15 seconds.");
+                //ESP_LOGI(TAG_MAIN, "Switched to PL: Mode 2 for 15 seconds.");
             } else if (data[0] == '4') {
                 torqueLimit = 200;
                 is_torque_transmitting = true;
                 torque_transmit_end_time = xTaskGetTickCount() + pdMS_TO_TICKS(15000);
-                ESP_LOGI(TAG_MAIN, "Switched to TorqueLimit: 200 for 15 seconds.");
+                //ESP_LOGI(TAG_MAIN, "Switched to TorqueLimit: 200 for 15 seconds.");
             } else if (data[0] == '5') {
                 torqueLimit = 150;
                 is_torque_transmitting = true;
                 torque_transmit_end_time = xTaskGetTickCount() + pdMS_TO_TICKS(15000);
-                ESP_LOGI(TAG_MAIN, "Switched to TorqueLimit: 150 for 15 seconds.");
+                //ESP_LOGI(TAG_MAIN, "Switched to TorqueLimit: 150 for 15 seconds.");
             } else {
                 is_transmitting = false;
                 is_pl_transmitting = false;
                 is_torque_transmitting = false;
-                ESP_LOGI(TAG_MAIN, "Invalid input, stopped transmission.");
+                //ESP_LOGI(TAG_MAIN, "Invalid input, stopped transmission.");
             }
         }
 
@@ -160,7 +160,7 @@ void task_uart(void *pvParameters) {
 }
 
 void task_lora(void *pvParameters) {
-    ESP_LOGI(TAG_SECONDARY, "Listening for LoRa messages...");
+    //ESP_LOGI(TAG_SECONDARY, "Listening for LoRa messages...");
 
     uint8_t rxData[256];
 
@@ -168,7 +168,7 @@ void task_lora(void *pvParameters) {
         if (is_transmitting) {
             if (xTaskGetTickCount() >= transmit_end_time) {
                 is_transmitting = false;
-                ESP_LOGI(TAG_MAIN, "DRS transmission stopped after 15 seconds.");
+                //ESP_LOGI(TAG_MAIN, "DRS transmission stopped after 15 seconds.");
             } else {
                 uint8_t txData[256];
                 const char *drsMessage = (drsMode == 1) ? "DRS: Manual" : "DRS: Auto";
@@ -186,7 +186,7 @@ void task_lora(void *pvParameters) {
         else if (is_pl_transmitting) {
             if (xTaskGetTickCount() >= pl_transmit_end_time) {
                 is_pl_transmitting = false;
-                ESP_LOGI(TAG_MAIN, "PL transmission stopped after 15 seconds.");
+                //ESP_LOGI(TAG_MAIN, "PL transmission stopped after 15 seconds.");
             } else {
                 uint8_t txData[256];
                 const char *plMessage = (plMode == 1) ? "PL: Mode 1" : "PL: Mode 2";
@@ -204,7 +204,7 @@ void task_lora(void *pvParameters) {
         else if (is_torque_transmitting) {
             if (xTaskGetTickCount() >= torque_transmit_end_time) {
                 is_torque_transmitting = false;
-                ESP_LOGI(TAG_MAIN, "TorqueLimit transmission stopped after 15 seconds.");
+                //ESP_LOGI(TAG_MAIN, "TorqueLimit transmission stopped after 15 seconds.");
             } else {
                 uint8_t txData[256];
                 char torqueMessage[50];
@@ -223,7 +223,8 @@ void task_lora(void *pvParameters) {
         else {
             uint8_t rxLen = LoRaReceive(rxData, sizeof(rxData));
             if (rxLen > 0) {
-                ESP_LOGI(TAG_SECONDARY, "Received %d byte packet: [%.*s]", rxLen, rxLen, rxData);
+                //ESP_LOGI(TAG_SECONDARY, "Received %d byte packet: [%.*s]", rxLen, rxLen, rxData);
+                printf("%.*s\n", rxLen, rxData);  // This prints the raw message
                 parse_lora_message(rxData, rxLen);
             }
 
@@ -234,11 +235,10 @@ void task_lora(void *pvParameters) {
 
 // Main sensor handling task (Web server related tasks)
 void task_web_server(void *pvParameters) {
-    ESP_LOGI(TAG_MAIN, "Web server related tasks will be here...");
+    //ESP_LOGI(TAG_MAIN, "Web server related tasks will be here...");
 
     while (true) {
-        ESP_LOGI(TAG_MAIN, "Pack_Voltage:%d, MCM_Motor_Speed:%d, VCU_Faults:%d, BMS_Faults:%d", 
-                 Pack_Voltage, MCM_Motor_Speed, VCU_Faults, BMS_Faults);
+        //ESP_LOGI(TAG_MAIN, "Pack_Voltage:%d, MCM_Motor_Speed:%d, VCU_Faults:%d, BMS_Faults:%d", Pack_Voltage, MCM_Motor_Speed, VCU_Faults, BMS_Faults);
 
         // Add web server code and other non-LoRa related operations here
         vTaskDelay(MAIN_TASK_PERIOD / portTICK_PERIOD_MS);  // Periodic task delay
@@ -261,7 +261,7 @@ void app_main(void) {
     init_uart();
 
     // Initialize LoRa
-    ESP_LOGI(TAG_SECONDARY, "Initializing LoRa...");
+    //ESP_LOGI(TAG_SECONDARY, "Initializing LoRa...");
     LoRaInit();
     uint32_t frequencyInHz = 915000000;  // 915MHz for LoRa
     int8_t txPowerInDbm = 22;            // Transmission power in dBm

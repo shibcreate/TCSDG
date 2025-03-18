@@ -117,6 +117,6 @@ function getSensorValues() {
  * Sets the Interval for getting the updated Sensor Values
  */
 function startSensorInterval() {
-  // Call this function every 5 seconds to update sensor values
-  setInterval(getSensorValues, 5000);
+  // Call this function every 3 seconds to update sensor values
+  setInterval(getSensorValues, 3000);
 }
