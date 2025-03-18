@@ -1,19 +1,12 @@
-/*
- * main.h
- *
- *  Created on: 22-Jul-2023
- *      Author: xpress_embedo
- */
-
 #ifndef MAIN_MAIN_H_
 #define MAIN_MAIN_H_
-
+ 
 #include "prj_refs.h"
-
-// Macros
-
-// Public Function Declaration
-uint8_t get_temperature(void);
-uint8_t get_humidity(void);
-
-#endif /* MAIN_MAIN_H_ */
+ 
+ // Public Function Declarations
+uint8_t get_pack_voltage(void);
+uint8_t get_mcm_motor_speed(void);
+uint8_t get_vcu_faults(void);
+uint8_t get_bms_faults(void);
+ 
+#endif /* MAIN_MAIN_H_ */ 

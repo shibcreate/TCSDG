@@ -17,8 +17,10 @@
 #define UART_BUF_SIZE      (1024)
 
 // Private Variables
-static uint8_t Ground_Speed = 0u;
-static uint8_t MCM_Voltage_Info = 0u;
+static uint8_t Pack_Voltage = 0u;
+static uint8_t MCM_Motor_Speed = 0u;
+static uint8_t VCU_Faults = 0u;
+static uint8_t BMS_Faults = 0u;
 
 static const char *TAG_MAIN = "MAIN";
 static const char *TAG_SECONDARY = "SECONDARY";
@@ -41,20 +43,36 @@ void parse_lora_message(uint8_t *rxData, uint8_t rxLen) {
     strncpy(message, (char *)rxData, rxLen);
     message[rxLen] = '\0';  // Null-terminate the string
 
-    // Check if the message contains MCM_Voltage_Info
+    // Check if the message contains Pack_Voltage
     if (strstr(message, "Pack_Voltage") != NULL) {
         int value = 0;
         if (sscanf(message, "Pack_Voltage: %d", &value) == 1) {
-            MCM_Voltage_Info = value;  // Update MCM_Voltage_Info with the extracted value
-            ESP_LOGI(TAG_SECONDARY, "Updated MCM_Voltage_Info to %d", MCM_Voltage_Info);
+            Pack_Voltage = value;  // Update Pack_Voltage
+            ESP_LOGI(TAG_SECONDARY, "Updated Pack_Voltage to %d", Pack_Voltage);
         }
     }
-    // Check if the message contains Ground_Speed
+    // Check if the message contains MCM_Motor_Speed
     else if (strstr(message, "MCM_Motor_Speed") != NULL) {
         int value = 0;
         if (sscanf(message, "MCM_Motor_Speed: %d", &value) == 1) {
-            Ground_Speed = value;  // Update Ground_Speed with the extracted value
-            ESP_LOGI(TAG_SECONDARY, "Updated Ground_Speed to %d", Ground_Speed);
+            MCM_Motor_Speed = value;  // Update MCM_Motor_Speed
+            ESP_LOGI(TAG_SECONDARY, "Updated MCM_Motor_Speed to %d", MCM_Motor_Speed);
+        }
+    }
+    // Check if the message contains VCU_Faults
+    else if (strstr(message, "VCU_FAULTS") != NULL) {
+        int value = 0;
+        if (sscanf(message, "VCU_FAULTS: %d", &value) == 1) {
+            VCU_Faults = value;  // Update VCU_Faults
+            ESP_LOGI(TAG_SECONDARY, "Updated VCU_Faults to %d", VCU_Faults);
+        }
+    }
+    // Check if the message contains BMS_Faults
+    else if (strstr(message, "BMS_FAULTS") != NULL) {
+        int value = 0;
+        if (sscanf(message, "BMS_FAULTS: %d", &value) == 1) {
+            BMS_Faults = value;  // Update BMS_Faults
+            ESP_LOGI(TAG_SECONDARY, "Updated BMS_Faults to %d", BMS_Faults);
         }
     }
 }
@@ -219,7 +237,9 @@ void task_web_server(void *pvParameters) {
     ESP_LOGI(TAG_MAIN, "Web server related tasks will be here...");
 
     while (true) {
-        ESP_LOGI(TAG_MAIN, "MCM_Voltage_Info:%d, Ground_Speed:%d", MCM_Voltage_Info, Ground_Speed);
+        ESP_LOGI(TAG_MAIN, "Pack_Voltage:%d, MCM_Motor_Speed:%d, VCU_Faults:%d, BMS_Faults:%d", 
+                 Pack_Voltage, MCM_Motor_Speed, VCU_Faults, BMS_Faults);
+
         // Add web server code and other non-LoRa related operations here
         vTaskDelay(MAIN_TASK_PERIOD / portTICK_PERIOD_MS);  // Periodic task delay
     }
@@ -263,11 +283,19 @@ void app_main(void) {
     xTaskCreatePinnedToCore(&task_uart, "UART_TASK", 1024 * 4, NULL, 5, NULL, 0); // Core 0 for UART task
 }
 
-// Public Function Definitions
-uint8_t get_temperature(void) {
-    return MCM_Voltage_Info;
+// Getter Functions for Web Server
+uint8_t get_pack_voltage(void) {
+    return Pack_Voltage;
 }
 
-uint8_t get_humidity(void) {
-    return Ground_Speed;
+uint8_t get_mcm_motor_speed(void) {
+    return MCM_Motor_Speed;
+}
+
+uint8_t get_vcu_faults(void) {
+    return VCU_Faults;
+}
+
+uint8_t get_bms_faults(void) {
+    return BMS_Faults;
 }

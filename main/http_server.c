@@ -568,11 +568,18 @@ static esp_err_t http_server_ota_status_handler(httpd_req_t *req)
  */
 static esp_err_t http_server_sensor_value_handler(httpd_req_t *req)
 {
-  char sensor_JSON[100];
+  char sensor_JSON[200];  // Increased buffer size to accommodate the new data
   ESP_LOGI(TAG, "Sensor Readings Requested");
-  sprintf(sensor_JSON, "{\"temp\":%d,\"humidity\":\"%d\"}", get_temperature(), get_humidity() );
 
+  // Build the JSON response with the new sensor readings
+  sprintf(sensor_JSON, 
+          "{\"pack_voltage\":%d,\"motor_speed\":%d,\"vcu_faults\":%d,\"bms_faults\":%d}",
+          get_pack_voltage(), get_mcm_motor_speed(), get_vcu_faults(), get_bms_faults());
+
+  // Set the response type to JSON
   httpd_resp_set_type(req, "application/json");
+  
+  // Send the response with the sensor data
   httpd_resp_send(req, sensor_JSON, strlen(sensor_JSON));
 
   return ESP_OK;

@@ -7,26 +7,35 @@
     <script src='jquery-3.3.1.min.js'></script>
     <link rel="stylesheet" href="app.css">
     <script async src="app.js"></script>
-    <title>Weather Station</title>
+    <title>TCSDG - SR Telemetry</title>
   </head>
   <body>
-  <header>
-    <h1>TCSDG - SR Telemetry</h1>
-  </header>
+    <header>
+      <h1>TCSDG - SR Telemetry</h1>
+    </header>
 
-  <div id="Sensor">
-    <h2>Sensor Readings</h2>
-    <label for="temperature_value">MCM_Voltage_Info: </label>
-    <div id="temperature_value"></div>
-    <label>° C,</label>
-    <label for="humidity_value">Ground_Speed: </label>
-    <div id="humidity_value"></div>
-    <label>%</label>
-  </div>
-  <hr>
+    <div id="Sensor">
+      <h2>Sensor Readings</h2>
+      <label for="pack_voltage_value">Pack Voltage: </label>
+      <div id="pack_voltage_value"></div>
+      <label>V</label><br>
 
-  <div id="OTA">
-    <h2>ESP32 Firmware Update</h2>
+      <label for="motor_speed_value">Motor Speed: </label>
+      <div id="motor_speed_value"></div>
+      <label>RPM</label><br>
+
+      <label for="vcu_faults_value">VCU Faults: </label>
+      <div id="vcu_faults_value"></div>
+      <label>Faults</label><br>
+
+      <label for="bms_faults_value">BMS Faults: </label>
+      <div id="bms_faults_value"></div>
+      <label>Faults</label><br>
+    </div>
+    <hr>
+
+    <div id="OTA">
+      <h2>ESP32 Firmware Update</h2>
       <label id="latest_firmware_label">Latest Firmware: </label>
       <div id="latest_firmware"></div> 
       <input type="file" id="selected_file" accept=".bin" style="display: none;" onchange="getFileInfo()" />
@@ -40,4 +49,4 @@
     <hr>
 
   </body>
-<html>
+</html>

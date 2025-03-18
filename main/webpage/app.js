@@ -1,5 +1,5 @@
 /**
- * Add gobals here
+ * Add globals here
  */
 var seconds = null;
 var otaTimerVar = null;
@@ -7,8 +7,7 @@ var otaTimerVar = null;
 /**
  * Initialize functions here.
  */
-$(document).ready(function()
-{
+$(document).ready(function() {
   getUpdateStatus();
   startSensorInterval();
 });
@@ -16,8 +15,7 @@ $(document).ready(function()
 /**
  * Gets file name and size for display on the web page.
  */
-function getFileInfo() 
-{
+function getFileInfo() {
   var x = document.getElementById("selected_file");
   var file = x.files[0];
 
@@ -27,14 +25,12 @@ function getFileInfo()
 /**
  * Handles the firmware update.
  */
-function updateFirmware() 
-{
+function updateFirmware() {
   // Form Data
   var formData = new FormData();
   var fileSelect = document.getElementById("selected_file");
-  
-  if (fileSelect.files && fileSelect.files.length == 1) 
-  {
+
+  if (fileSelect.files && fileSelect.files.length == 1) {
     var file = fileSelect.files[0];
     formData.set("file", file, file.name);
     document.getElementById("ota_update_status").innerHTML = "Uploading " + file.name + ", Firmware Update in Progress...";
@@ -46,9 +42,7 @@ function updateFirmware()
     request.open('POST', "/OTAupdate");
     request.responseType = "blob";
     request.send(formData);
-  }
-  else 
-  {
+  } else {
     window.alert('Select A File First')
   }
 }
@@ -56,45 +50,36 @@ function updateFirmware()
 /**
  * Progress on transfers from the server to the client (downloads).
  */
-function updateProgress(oEvent) 
-{
-  if (oEvent.lengthComputable) 
-  {
+function updateProgress(oEvent) {
+  if (oEvent.lengthComputable) {
     getUpdateStatus();
-  } 
-  else 
-  {
+  } else {
     window.alert('total size is unknown')
   }
 }
 
 /**
- * Posts the firmware udpate status.
+ * Posts the firmware update status.
  */
-function getUpdateStatus() 
-{
+function getUpdateStatus() {
   var xhr = new XMLHttpRequest();
   var requestURL = "/OTAstatus";
   xhr.open('POST', requestURL, false);
   xhr.send('ota_update_status');
 
-  if (xhr.readyState == 4 && xhr.status == 200)
-  {
+  if (xhr.readyState == 4 && xhr.status == 200) {
     var response = JSON.parse(xhr.responseText);
 
-    document.getElementById("latest_firmware").innerHTML = response.compile_date + " - " + response.compile_time
+    document.getElementById("latest_firmware").innerHTML = response.compile_date + " - " + response.compile_time;
 
     // If flashing was complete it will return a 1, else -1
     // A return of 0 is just for information on the Latest Firmware request
-    if (response.ota_update_status == 1)
-    {
+    if (response.ota_update_status == 1) {
       // Set the countdown timer time
       seconds = 10;
       // Start the countdown timer
       otaRebootTimer();
-      } 
-    else if (response.ota_update_status == -1)
-    {
+    } else if (response.ota_update_status == -1) {
       document.getElementById("ota_update_status").innerHTML = "!!! Upload Error !!!";
     }
   }
@@ -103,34 +88,35 @@ function getUpdateStatus()
 /**
  * Displays the reboot countdown.
  */
-function otaRebootTimer() 
-{
+function otaRebootTimer() {
   document.getElementById("ota_update_status").innerHTML = "OTA Firmware Update Complete. This page will close shortly, Rebooting in: " + seconds;
 
-  if (--seconds == 0) 
-  {
+  if (--seconds == 0) {
     clearTimeout(otaTimerVar);
     window.location.reload();
-  } 
-  else 
-  {
+  } else {
     otaTimerVar = setTimeout(otaRebootTimer, 1000);
   }
 }
 
-// Get the Sensor Temperature and Humidity Values for Display on the web page
-function getSensorValues()
-{
+/**
+ * Get the Sensor Values (Pack Voltage, Motor Speed, VCU Faults, BMS Faults)
+ * for Display on the web page
+ */
+function getSensorValues() {
   $.getJSON('/Sensor', function(data) {
-    $("#temperature_value").text(data["temp"]);
-    $("#humidity_value").text(data["humidity"]);
+    // Update the sensor values with the new data
+    $("#pack_voltage_value").text(data["pack_voltage"]);
+    $("#motor_speed_value").text(data["motor_speed"]);
+    $("#vcu_faults_value").text(data["vcu_faults"]);
+    $("#bms_faults_value").text(data["bms_faults"]);
   });
 }
 
-// Sets the Interval for getting the updated Sensor Values
-function startSensorInterval()
-{
-  // Call this function every 5 seconds
+/**
+ * Sets the Interval for getting the updated Sensor Values
+ */
+function startSensorInterval() {
+  // Call this function every 5 seconds to update sensor values
   setInterval(getSensorValues, 5000);
 }
-
