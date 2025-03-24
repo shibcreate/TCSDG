@@ -108,8 +108,13 @@ function getSensorValues() {
     // Update the sensor values with the new data
     $("#pack_voltage_value").text(data["pack_voltage"]);
     $("#motor_speed_value").text(data["motor_speed"]);
-    $("#vcu_faults_value").text(data["vcu_faults"]);
-    $("#bms_faults_value").text(data["bms_faults"]);
+    
+    // Convert VCU and BMS faults to binary
+    let vcuBinary = (data["vcu_faults"] >>> 0).toString(2);
+    let bmsBinary = (data["bms_faults"] >>> 0).toString(2);
+
+    $("#vcu_faults_value").text(vcuBinary);
+    $("#bms_faults_value").text(bmsBinary);
   });
 }
 
