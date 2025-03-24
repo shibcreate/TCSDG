@@ -61,20 +61,6 @@
         margin: 20px;
       }
 
-      .buttons input {
-        background-color: #ffa500;
-        color: white;
-        border: none;
-        padding: 10px 20px;
-        cursor: pointer;
-        margin: 10px;
-        border-radius: 5px;
-      }
-
-      .buttons input:hover {
-        background-color: #ff8c00;
-      }
-
       h4 {
         color: #ffa500;
       }
@@ -124,11 +110,6 @@
       <h2>ESP32 Firmware Update</h2>
       <label id="latest_firmware_label">Latest Firmware: </label>
       <div id="latest_firmware" class="sensor-value"></div> 
-      <input type="file" id="selected_file" accept=".bin" style="display: none;" onchange="getFileInfo()" />
-      <div class="buttons">
-        <input type="button" value="Select File" onclick="document.getElementById('selected_file').click();" />
-        <input type="button" value="Update Firmware" onclick="updateFirmware()" />
-      </div>
       <h4 id="file_info"></h4>
       <h4 id="ota_update_status" class="status"></h4>
     </div>
