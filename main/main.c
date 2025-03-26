@@ -275,7 +275,7 @@ void app_main(void) {
         }
     }
 
-    LoRaConfig(7, 4, 1, 8, 0, true, false);  // LoRa config settings
+    LoRaConfig(9, 4, 1, 8, 0, true, false);  // LoRa config settings
 
     // Start tasks on different cores
     xTaskCreatePinnedToCore(&task_lora, "LORA_TASK", 1024 * 4, NULL, 5, NULL, 1);  // Core 1 for LoRa task
