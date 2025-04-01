@@ -18,6 +18,7 @@ ground = []
 
 #not graphed/for digital display: All VCU data/fault, BMS_fault
 
+global count 
 count = 0 #for testing latency
 
 
@@ -25,6 +26,8 @@ def update_data():
     value = ser.readline()
     valueInString = str(value, 'UTF-8')
     res = re.split(r'[: ]', valueInString)
+    #print(res)
+    #count = count + 1
 
     match res[0]: #add more cases for future data
         case 'EMeter_Current':
@@ -75,6 +78,8 @@ def update_data():
     #print(res[4])
     #count = count + 1
     #print(count)
+
+
 
 '''
 while True:

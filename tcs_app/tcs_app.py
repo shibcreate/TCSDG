@@ -4,36 +4,67 @@ import uart_data_read as udr
 import time
 import threading
 
-nsamples = 10
-global time_x #y_axis for most graphs
-time_x = []
-time_x.append(0)
+nsamples = 1000
+global time_x
+time_x = [0.0]*nsamples
+global em_cur
+em_cur = [0.0]*nsamples
+global em_volt
+em_volt = [0.0]*nsamples
+
+global pause_check 
+pause_check = False
 
 def update_all():
     t0 = time.time()
     while True:
-        udr.update_data() #update x axis
-        time_x.append(time.time() - t0) #update time y axis
+        #if (pause_check == False):
+            for i in range(11):
+                udr.update_data()
+            time_x.append(time.time() - t0) #update time x axis
+            em_cur.append(udr.em_current[-1]) #update y axis
+            em_volt.append(udr.em_volt[-1])
 
-        #set series x and y to last nsamples
-        dpg.set_value('series_tag', [list(udr.ground[-nsamples:]), list(time_x[-nsamples:])])
-        dpg.fit_axis_data('x_axis')
-        dpg.fit_axis_data('y_axis')
+            #set series x and y to last nsamples
+            dpg.set_value('series_tag1', [list(time_x[-nsamples:]), list(em_cur[-nsamples:])])
+            dpg.set_value('series_tag2', [list(time_x[-nsamples:]), list(em_volt[-nsamples:])])
+            dpg.fit_axis_data('x_axis')
+            dpg.fit_axis_data('y_axis')
+            dpg.fit_axis_data('x_axis1')
+            dpg.fit_axis_data('y_axis2')
+
+            #time.sleep(0.1)
 
 dpg.create_context()
-with dpg.window(label='Tutorial', tag='win', width=800, height = 600):
+with dpg.window(label='Graphs', tag='win', width=1000, height = 800):
     
-    with dpg.plot(label='Ground Speed v Time', height=600, width=800):
+    with dpg.plot(label='em current vs time', height=300, width=800):
         #create x and y axes, set to auto scale
-        x_axis = dpg.add_plot_axis(dpg.mvXAxis, label='ground speed', tag='x_axis')
-        y_axis = dpg.add_plot_axis(dpg.mvYAxis, label='time', tag='y_axis')
+        x_axis = dpg.add_plot_axis(dpg.mvXAxis, label='time', tag='x_axis')
+        y_axis = dpg.add_plot_axis(dpg.mvYAxis, label='em current', tag='y_axis')
 
-        dpg.add_line_series(udr.ground, time_x, label='Temp', parent='y_axis', tag='series_tag')
+        dpg.add_line_series(x=list(time_x), y=list(em_cur), label='Temp', parent='y_axis', tag='series_tag1')
+    
+    with dpg.plot(label='em volt vs time', height=300, width=800):
+        #create x and y axes, set to auto scale
+        x_axis = dpg.add_plot_axis(dpg.mvXAxis, label='time', tag='x_axis1')
+        y_axis = dpg.add_plot_axis(dpg.mvYAxis, label='em volt', tag='y_axis2')
 
-dpg.create_viewport(title='Custom Title', width=850, height=640)
+        dpg.add_line_series(x=list(time_x), y=list(em_volt), label='Temp', parent='y_axis2', tag='series_tag2')
+
+def pause_graph(sender, data):
+    if (pause_check):
+        pause_check = True
+    else:
+        pause_check = False
+
+
+dpg.create_viewport(title='TCS App', width=1000, height=800)
 
 dpg.setup_dearpygui()
 dpg.show_viewport()
+
+#dpg.add_button(label="Pause", callback=pause_graph)
 
 thread = threading.Thread(target=update_all)
 thread.start()
