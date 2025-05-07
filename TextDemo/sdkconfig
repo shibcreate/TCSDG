@@ -554,9 +554,24 @@ CONFIG_PARTITION_TABLE_MD5=y
 # end of Partition Table
 
 #
-# SSD1306 Configuration
+# Application Configuration
 #
 CONFIG_GPIO_RANGE_MAX=48
+# CONFIG_CAN_BITRATE_25 is not set
+# CONFIG_CAN_BITRATE_50 is not set
+# CONFIG_CAN_BITRATE_100 is not set
+# CONFIG_CAN_BITRATE_125 is not set
+# CONFIG_CAN_BITRATE_250 is not set
+CONFIG_CAN_BITRATE_500=y
+# CONFIG_CAN_BITRATE_800 is not set
+# CONFIG_CAN_BITRATE_1000 is not set
+CONFIG_CTX_GPIO=17
+CONFIG_CRX_GPIO=18
+# end of Application Configuration
+
+#
+# SSD1306 Configuration
+#
 CONFIG_I2C_INTERFACE=y
 # CONFIG_SPI_INTERFACE is not set
 # CONFIG_SSD1306_128x32 is not set

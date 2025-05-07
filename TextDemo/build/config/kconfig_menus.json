@@ -6310,6 +6310,140 @@
                 "children": [
                     {
                         "children": [],
+                        "depends_on": "<choice CAN_BITRATE>",
+                        "help": "CAN bitrate is 25 Kbit/s.",
+                        "id": "CAN_BITRATE_25",
+                        "name": "CAN_BITRATE_25",
+                        "range": null,
+                        "title": "BITRATE_25",
+                        "type": "bool"
+                    },
+                    {
+                        "children": [],
+                        "depends_on": "<choice CAN_BITRATE>",
+                        "help": "CAN bitrate is 50 Kbit/s.",
+                        "id": "CAN_BITRATE_50",
+                        "name": "CAN_BITRATE_50",
+                        "range": null,
+                        "title": "BITRATE_50",
+                        "type": "bool"
+                    },
+                    {
+                        "children": [],
+                        "depends_on": "<choice CAN_BITRATE>",
+                        "help": "CAN bitrate is 100 Kbit/s.",
+                        "id": "CAN_BITRATE_100",
+                        "name": "CAN_BITRATE_100",
+                        "range": null,
+                        "title": "BITRATE_100",
+                        "type": "bool"
+                    },
+                    {
+                        "children": [],
+                        "depends_on": "<choice CAN_BITRATE>",
+                        "help": "CAN bitrate is 125 Kbit/s.",
+                        "id": "CAN_BITRATE_125",
+                        "name": "CAN_BITRATE_125",
+                        "range": null,
+                        "title": "BITRATE_125",
+                        "type": "bool"
+                    },
+                    {
+                        "children": [],
+                        "depends_on": "<choice CAN_BITRATE>",
+                        "help": "CAN bitrate is 250 Kbit/s.",
+                        "id": "CAN_BITRATE_250",
+                        "name": "CAN_BITRATE_250",
+                        "range": null,
+                        "title": "BITRATE_250",
+                        "type": "bool"
+                    },
+                    {
+                        "children": [],
+                        "depends_on": "<choice CAN_BITRATE>",
+                        "help": "CAN bitrate is 500 Kbit/s.",
+                        "id": "CAN_BITRATE_500",
+                        "name": "CAN_BITRATE_500",
+                        "range": null,
+                        "title": "BITRATE_500",
+                        "type": "bool"
+                    },
+                    {
+                        "children": [],
+                        "depends_on": "<choice CAN_BITRATE>",
+                        "help": "CAN bitrate is 800 Kbit/s.",
+                        "id": "CAN_BITRATE_800",
+                        "name": "CAN_BITRATE_800",
+                        "range": null,
+                        "title": "BITRATE_800",
+                        "type": "bool"
+                    },
+                    {
+                        "children": [],
+                        "depends_on": "<choice CAN_BITRATE>",
+                        "help": "CAN bitrate is 1 Mbit/s.",
+                        "id": "CAN_BITRATE_1000",
+                        "name": "CAN_BITRATE_1000",
+                        "range": null,
+                        "title": "BITRATE_1000",
+                        "type": "bool"
+                    }
+                ],
+                "depends_on": null,
+                "help": "Select the CAN bitrate for the example.",
+                "id": "application-configuration-can-bitrate",
+                "name": "CAN_BITRATE",
+                "title": "CAN Bitrate",
+                "type": "choice"
+            },
+            {
+                "children": [],
+                "depends_on": null,
+                "help": "GPIO number (IOxx) to CTX.\nSome GPIOs are used for other purposes (flash connections, etc.).\nGPIOs 35-39 are input-only so cannot be used as outputs.",
+                "id": "CTX_GPIO",
+                "name": "CTX_GPIO",
+                "range": [
+                    0,
+                    48
+                ],
+                "title": "CTX GPIO number",
+                "type": "int"
+            },
+            {
+                "children": [],
+                "depends_on": null,
+                "help": "GPIO number (IOxx) to CRX.\nSome GPIOs are used for other purposes (flash connections, etc.).\nGPIOs 35-39 are input-only so cannot be used as outputs.",
+                "id": "CRX_GPIO",
+                "name": "CRX_GPIO",
+                "range": [
+                    0,
+                    48
+                ],
+                "title": "CRX GPIO number",
+                "type": "int"
+            }
+        ],
+        "depends_on": null,
+        "id": "application-configuration",
+        "title": "Application Configuration",
+        "type": "menu"
+    },
+    {
+        "children": [
+            {
+                "children": [],
+                "depends_on": null,
+                "help": null,
+                "id": "GPIO_RANGE_MAX",
+                "name": "GPIO_RANGE_MAX",
+                "range": null,
+                "title": null,
+                "type": "int"
+            },
+            {
+                "children": [
+                    {
+                        "children": [],
                         "depends_on": "<choice INTERFACE>",
                         "help": "I2C Interface.",
                         "id": "I2C_INTERFACE",
