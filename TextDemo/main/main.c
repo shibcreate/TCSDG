@@ -129,7 +129,7 @@ void app_main(void)
 
 void stateManagerTask(void* parameter){
     currentState = SENDING_STATE;
-    TickType_t lastActivityTime = xTaskGetTickCount();
+    
     for(;;){
         switch (currentState)
         {
@@ -148,9 +148,6 @@ void stateManagerTask(void* parameter){
             printf("Default\n");
             break;
         }
-        // if (xTaskGetTickCount() - lastActivityTime > pdMS_TO_TICKS(10000)){
-        //     currentState = SLEEP_STATE;
-        // }
 
         vTaskDelay(1000 / portTICK_PERIOD_MS);
     }
@@ -178,12 +175,13 @@ void handleLightSleepState(){
     fflush(stdout);
     esp_deep_sleep_start();
 }
-
+int count = 0;
 void canReceive() {
     twai_message_t rx_msg;
     esp_err_t result = twai_receive(&rx_msg, pdMS_TO_TICKS(10));
     
     if (result == ESP_OK) {
+		count = 0;
         if (rx_msg.extd == 0 && rx_msg.rtr == 0) {
             parseCanMessages(rx_msg.identifier, rx_msg.data);
         } else {
@@ -192,6 +190,11 @@ void canReceive() {
     }
     else {
         printf("Error receiving CAN message: %s\n", esp_err_to_name(result));
+		count++;
+		if(count == 6){
+			currentState = SLEEP_STATE;
+		}
+		
     }
 }
 
@@ -199,7 +202,7 @@ void canSend(){
     static const char *TAG = "CAN_SEND";
 
     twai_message_t msg = {
-        .identifier = 0x800,
+        .identifier = 0x7FF,
         .extd = 0,
         .data_length_code = 8,
         .data = {0x00, 0x00, 0x00, 0x00, 0x00, 0x00, 0x00, 0x01}

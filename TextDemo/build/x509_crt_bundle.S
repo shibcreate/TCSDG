@@ -1,4 +1,4 @@
-/* * Data converted from C:/Users/jorda/VSCRepo/TCSDG/TextDemo/build/esp-idf/mbedtls/x509_crt_bundle
+/* * Data converted from /Users/jordannguyen/espProjects/TCSDG/TextDemo/build/esp-idf/mbedtls/x509_crt_bundle
  */
 .data
 #if !defined (__APPLE__) && !defined (__linux__)
