@@ -10,7 +10,7 @@
 #include "esp_ota_ops.h"
 #include "sys/param.h"
 
-#include "main.h"
+#include "lora_app.h"
 #include "http_server.h"
 #include "tasks_common.h"
 #include "wifi_app.h"

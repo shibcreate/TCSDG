@@ -5,6 +5,9 @@ idf_component_register(
     SRCS main.c         # List of source files
          wifi_app.c
          http_server.c
+         lora_app.c
+         uart_app.c
+         web_app.c
     INCLUDE_DIRS "."    # Public include directories
     PRIV_INCLUDE_DIRS   # Private include directories (if needed)
     EMBED_FILES webpage/app.css 
