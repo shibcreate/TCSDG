@@ -1,0 +1,15 @@
+{
+    "idf.portWin": "COM6",
+    "idf.customExtraVars": {
+        "IDF_TARGET": "esp32s3"
+    },
+    "idf.openOcdConfigs": [
+        "board/esp32s3-builtin.cfg"
+    ],
+    "idf.flashType": "UART",
+    "files.associations": {
+        "stdlib.h": "c",
+        "stdio.h": "c"
+    },
+    "idf.port": "/dev/tty.usbmodem1201"
+}
