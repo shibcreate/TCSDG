@@ -191,7 +191,7 @@ void canReceive() {
     else {
         printf("Error receiving CAN message: %s\n", esp_err_to_name(result));
 		count++;
-		if(count == 6){
+		if(count == 15){
 			currentState = SLEEP_STATE;
 		}
 		

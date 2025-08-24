@@ -1,5 +1,5 @@
 {
-    "idf.portWin": "COM6",
+    "idf.portWin": "COM3",
     "idf.customExtraVars": {
         "IDF_TARGET": "esp32s3"
     },
@@ -11,5 +11,8 @@
         "stdlib.h": "c",
         "stdio.h": "c"
     },
-    "idf.port": "/dev/tty.usbmodem1201"
+    "idf.port": "/dev/tty.usbmodem1201",
+    "idf.espIdfPathWin": "C:\\Users\\jorda\\esp\\v5.4\\esp-idf",
+    "idf.toolsPathWin": "C:\\Users\\jorda\\.espressif",
+    "idf.pythonInstallPath": "C:\\Users\\jorda\\.espressif\\tools\\idf-python\\3.11.2\\python.exe"
 }
