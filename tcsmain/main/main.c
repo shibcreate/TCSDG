@@ -28,18 +28,18 @@
 typedef struct {
     float g_force;
     float accel[3];
-	// uint32_t vcu_can_id;
-    // uint8_t vcu_can_dlc;
-    // uint8_t vcu_can_data[8];
+	uint32_t vcu_can_id;
+    uint8_t vcu_can_dlc;
+    uint8_t vcu_can_data[8];
 	uint32_t bms_can_id;
     uint8_t bms_can_dlc;
     uint8_t bms_can_data[8];
-    // bool vcu_captured;
+    bool vcu_captured;
 	bool bms_captured;
 } crash_record_t;
 
 static uint8_t imu_crash_event = 2; // 1: Write, 2: Read, 3: Erase
-// static bool vcu_can_captured = false;
+static bool vcu_can_captured = false;
 static bool bms_can_captured = false;
 
 typedef enum {
@@ -445,6 +445,21 @@ void parseCanMessages(uint32_t msg_id, uint8_t data[8]){
 			printf("CAN R: VCU_FAULT_LVS_BatteryEmpty: %d\n", rawFAULT_LVS_BatteryEmpty);
 			printf("CAN R: VCU_WARNING_LVS_BatteryLow: %d\n", rawWARNING_LVS_BatteryLow);
 			printf("CAN R: VCU_NOTICE_HVIL_TermSenseLost: %d\n", rawNOTICE_HVIL_TermSenseLost);
+
+			if (imu_crash_event == 1 && !vcu_can_captured) {
+				crash_record_t vcu_record = {0};
+				vcu_record.g_force = 3.7f;
+				vcu_record.accel[0] = 1.2f;
+				vcu_record.accel[1] = -0.8f;
+				vcu_record.accel[2] = 0.4f;
+				vcu_record.vcu_can_id = msg_id;
+				vcu_record.vcu_can_dlc = 8;
+				memcpy(vcu_record.vcu_can_data, data, 8);
+				vcu_record.vcu_captured = true;
+				save_crash_record(&vcu_record);
+				vcu_can_captured = true;
+			}
+			
 			break;
 
 		case 0x50A: //Ground_Speed
@@ -627,11 +642,24 @@ void read_crash_record() {
         printf("=== CRASH DETECTED ===\n");
         printf("G-Force: %.2f g\n", record.g_force);
         printf("Accel: [%.2f, %.2f, %.2f]\n", record.accel[0], record.accel[1], record.accel[2]);
-        printf("CAN Msg ID: 0x%lX, DLC: %d\n", record.bms_can_id, record.bms_can_dlc);
-        printf("Data: ");
-        for (int i = 0; i < record.bms_can_dlc; i++)
-            printf("%02X ", record.bms_can_data[i]);
-        printf("\n");
+
+        if (record.bms_captured) {
+            printf("--- BMS Message ---\n");
+            printf("CAN Msg ID: 0x%lX, DLC: %d\n", record.bms_can_id, record.bms_can_dlc);
+            printf("Data: ");
+            for (int i = 0; i < record.bms_can_dlc; i++)
+                printf("%02X ", record.bms_can_data[i]);
+            printf("\n");
+        }
+
+        if (record.vcu_captured) {
+            printf("--- VCU Message ---\n");
+            printf("CAN Msg ID: 0x%lX, DLC: %d\n", record.vcu_can_id, record.vcu_can_dlc);
+            printf("Data: ");
+            for (int i = 0; i < record.vcu_can_dlc; i++)
+                printf("%02X ", record.vcu_can_data[i]);
+            printf("\n");
+        }
     }
     nvs_close(nvs);
 }
@@ -644,7 +672,7 @@ void erase_crash_record() {
     nvs_erase_key(nvs, "crash_record");
     nvs_commit(nvs);
     nvs_close(nvs);
-    //vcu_can_captured = false;
+    vcu_can_captured = false;
 	bms_can_captured = false;
     printf("Crash record erased.\n");
 }
