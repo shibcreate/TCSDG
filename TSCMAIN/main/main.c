@@ -24,6 +24,24 @@
 
 #define BUF_SIZE 128
 
+//CRASH STUFF
+typedef struct {
+    float g_force;
+    float accel[3];
+	// uint32_t vcu_can_id;
+    // uint8_t vcu_can_dlc;
+    // uint8_t vcu_can_data[8];
+	uint32_t bms_can_id;
+    uint8_t bms_can_dlc;
+    uint8_t bms_can_data[8];
+    // bool vcu_captured;
+	bool bms_captured;
+} crash_record_t;
+
+static uint8_t imu_crash_event = 1; // 1: Write, 2: Read, 3: Erase
+// static bool vcu_can_captured = false;
+static bool bms_can_captured = false;
+
 typedef enum {
     SENDING_STATE,
     RECEIVING_STATE,
@@ -83,6 +101,12 @@ void parseCanMessages(uint32_t msg_id, uint8_t data[8]);
 void canReceive();
 void canSend();
 
+//CRASH STUFF
+void save_crash_record(crash_record_t *record);
+void read_crash_record();
+void erase_crash_record();
+void handle_crash_event();
+
 static const twai_general_config_t g_config =
 	TWAI_GENERAL_CONFIG_DEFAULT(CONFIG_CTX_GPIO, CONFIG_CRX_GPIO, TWAI_MODE_NORMAL);
 
@@ -96,6 +120,8 @@ void app_main(void)
     ret = nvs_flash_init();
     }
     ESP_ERROR_CHECK(ret);
+
+	handle_crash_event();
 
     setup_i2c_and_ssd1306();
     ESP_LOGI(TAG, "%s",BITRATE);
@@ -419,6 +445,20 @@ void parseCanMessages(uint32_t msg_id, uint8_t data[8]){
 			printf("CAN R: VCU_FAULT_LVS_BatteryEmpty: %d\n", rawFAULT_LVS_BatteryEmpty);
 			printf("CAN R: VCU_WARNING_LVS_BatteryLow: %d\n", rawWARNING_LVS_BatteryLow);
 			printf("CAN R: VCU_NOTICE_HVIL_TermSenseLost: %d\n", rawNOTICE_HVIL_TermSenseLost);
+
+			// if (imu_crash_event == 1 && !vcu_can_captured) {
+			// 	crash_record_t vcu_record = {0};
+			// 	vcu_record.g_force = 3.7f;
+			// 	vcu_record.accel[0] = 1.2f;
+			// 	vcu_record.accel[1] = -0.8f;
+			// 	vcu_record.accel[2] = 0.4f;
+			// 	vcu_record.vcu_can_id = msg_id;
+			// 	vcu_record.vcu_can_dlc = 8;
+			// 	memcpy(vcu_record.vcu_can_data, data, 8);
+			// 	vcu_record.vcu_captured = true;
+			// 	save_crash_record(&vcu_record); //might change later
+			// 	vcu_can_captured = true;
+    		// }
 			break;
 
 		case 0x50A: //Ground_Speed
@@ -510,25 +550,40 @@ void parseCanMessages(uint32_t msg_id, uint8_t data[8]){
 
 			float Pack_Voltage = (float)rawPack_Voltage * 0.0001f;
 			
-			printf("CAN R: Pack_Voltage: %.4f\n", Pack_Voltage);
-			printf("CAN R: Balancing_State: %d\n", rawBalancing_State);
-			printf("CAN R: Pack_High_Volt_Warning: %d\n", rawPack_High_Volt_Warning);
-			printf("CAN R: Pack_Low_Volt_Warning: %d\n", rawPack_Low_Volt_Warning);
+			printf("CAN R: BMS_Pack_Voltage: %.4f\n", Pack_Voltage);
+			printf("CAN R: BMS_Balancing_State: %d\n", rawBalancing_State);
+			printf("CAN R: BMS_Pack_High_Volt_Warning: %d\n", rawPack_High_Volt_Warning);
+			printf("CAN R: BMS_Pack_Low_Volt_Warning: %d\n", rawPack_Low_Volt_Warning);
 		
-			printf("CAN R: Cell_Low_Volt_Warning: %d\n", rawCell_Low_Volt_Warning);
-			printf("CAN R: Cell_High_Volt_Warning: %d\n", rawCell_High_Volt_Warning);
-			printf("CAN R: Cell_High_Temp_Warning: %d\n", rawCell_High_Temp_Warning);
-			printf("CAN R: Cell_Low_Temp_Warning: %d\n", rawCell_Low_Temp_Warning);
+			printf("CAN R: BMS_Cell_Low_Volt_Warning: %d\n", rawCell_Low_Volt_Warning);
+			printf("CAN R: BMS_Cell_High_Volt_Warning: %d\n", rawCell_High_Volt_Warning);
+			printf("CAN R: BMS_Cell_High_Temp_Warning: %d\n", rawCell_High_Temp_Warning);
+			printf("CAN R: BMS_Cell_Low_Temp_Warning: %d\n", rawCell_Low_Temp_Warning);
 		
-			printf("CAN R: Cell_Volt_Imbalance_Warning: %d\n", rawCell_Volt_Imbalance_Warning);
-			printf("CAN R: Pack_High_Volt_Fault: %d\n", rawPack_High_Volt_Fault);
-			printf("CAN R: Pack_Low_Volt_Fault: %d\n", rawPack_Low_Volt_Fault);
-			printf("CAN R: Cell_Low_Volt_Fault: %d\n", rawCell_Low_Volt_Fault);
+			printf("CAN R: BMS_Cell_Volt_Imbalance_Warning: %d\n", rawCell_Volt_Imbalance_Warning);
+			printf("CAN R: BMS_Pack_High_Volt_Fault: %d\n", rawPack_High_Volt_Fault);
+			printf("CAN R: BMS_Pack_Low_Volt_Fault: %d\n", rawPack_Low_Volt_Fault);
+			printf("CAN R: BMS_Cell_Low_Volt_Fault: %d\n", rawCell_Low_Volt_Fault);
 		
-			printf("CAN R: Cell_High_Volt_Fault: %d\n", rawCell_High_Volt_Fault);
-			printf("CAN R: Cell_High_Temp_Fault: %d\n", rawCell_High_Temp_Fault);
-			printf("CAN R: Cell_Volt_Imbalance_Fault: %d\n", rawCell_Volt_Imbalance_Fault);
-			printf("CAN R: Balacing_End_Fault: %d\n", rawBalacing_End_Fault);
+			printf("CAN R: BMS_Cell_High_Volt_Fault: %d\n", rawCell_High_Volt_Fault);
+			printf("CAN R: BMS_Cell_High_Temp_Fault: %d\n", rawCell_High_Temp_Fault);
+			printf("CAN R: BMS_Cell_Volt_Imbalance_Fault: %d\n", rawCell_Volt_Imbalance_Fault);
+			printf("CAN R: BMS_Balacing_End_Fault: %d\n", rawBalacing_End_Fault);
+
+			if (imu_crash_event == 1 && !bms_can_captured) {
+				crash_record_t bms_record = {0};
+				bms_record.g_force = 3.7f;
+				bms_record.accel[0] = 1.2f;
+				bms_record.accel[1] = -0.8f;
+				bms_record.accel[2] = 0.4f;
+				bms_record.bms_can_id = msg_id;
+				bms_record.bms_can_dlc = 8;
+				memcpy(bms_record.bms_can_data, data, 8);
+				bms_record.bms_captured = true;
+				save_crash_record(&bms_record);
+				bms_can_captured = true;
+			}
+
 			break;
 
 		case 0x622: //BMS_Cell_Summary
@@ -556,6 +611,59 @@ void parseCanMessages(uint32_t msg_id, uint8_t data[8]){
 		printf("Unknown CAN ID: 0x%03" PRIX32 "\n", msg_id);
 			break;
 		}
+}
 
+void save_crash_record(crash_record_t *record) {
+    nvs_handle_t nvs;
+    if (nvs_open("crash_log", NVS_READWRITE, &nvs) != ESP_OK) return;
 
+    nvs_set_u8(nvs, "crash_flag", 1);
+    nvs_set_blob(nvs, "crash_record", record, sizeof(crash_record_t));
+    nvs_commit(nvs);
+    nvs_close(nvs);
+    printf("Crash record saved.\n");
+}
+
+void read_crash_record() {
+    nvs_handle_t nvs;
+    if (nvs_open("crash_log", NVS_READONLY, &nvs) != ESP_OK) return;
+
+    uint8_t crash_flag = 0;
+    if (nvs_get_u8(nvs, "crash_flag", &crash_flag) != ESP_OK || crash_flag != 1) {
+        nvs_close(nvs);
+        printf("No crash record found.\n");
+        return;
+    }
+
+    crash_record_t record;
+    size_t size = sizeof(record);
+    if (nvs_get_blob(nvs, "crash_record", &record, &size) == ESP_OK) {
+        printf("=== CRASH DETECTED ===\n");
+        printf("G-Force: %.2f g\n", record.g_force);
+        printf("Accel: [%.2f, %.2f, %.2f]\n", record.accel[0], record.accel[1], record.accel[2]);
+        printf("CAN Msg ID: 0x%lX, DLC: %d\n", record.bms_can_id, record.bms_can_dlc);
+        printf("Data: ");
+        for (int i = 0; i < record.bms_can_dlc; i++)
+            printf("%02X ", record.bms_can_data[i]);
+        printf("\n");
+    }
+    nvs_close(nvs);
+}
+
+void erase_crash_record() {
+    nvs_handle_t nvs;
+    if (nvs_open("crash_log", NVS_READWRITE, &nvs) != ESP_OK) return;
+
+    nvs_erase_key(nvs, "crash_flag");
+    nvs_erase_key(nvs, "crash_record");
+    nvs_commit(nvs);
+    nvs_close(nvs);
+    //vcu_can_captured = false;
+	bms_can_captured = false;
+    printf("Crash record erased.\n");
+}
+
+void handle_crash_event() {
+    if (imu_crash_event == 2) read_crash_record();
+    else if (imu_crash_event == 3) erase_crash_record();
 }
