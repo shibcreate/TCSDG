@@ -102,9 +102,12 @@ void canReceive();
 void canSend();
 
 //CRASH STUFF
-void save_crash_record(crash_record_t *record);
-void read_crash_record();
-void erase_crash_record();
+void vcu_save_crash_record(crash_record_t *record);
+void bms_save_crash_record(crash_record_t *record);
+void vcu_read_crash_record();
+void bms_read_crash_record();
+void vcu_erase_crash_record();
+void bms_erase_crash_record();
 void handle_crash_event();
 
 static const twai_general_config_t g_config =
@@ -448,15 +451,15 @@ void parseCanMessages(uint32_t msg_id, uint8_t data[8]){
 
 			if (imu_crash_event == 1 && !vcu_can_captured) {
 				crash_record_t vcu_record = {0};
-				vcu_record.g_force = 3.7f;
-				vcu_record.accel[0] = 1.2f;
-				vcu_record.accel[1] = -0.8f;
-				vcu_record.accel[2] = 0.4f;
+				vcu_record.g_force = 5.1f;
+				vcu_record.accel[0] = 5.1f;
+				vcu_record.accel[1] = 5.1f;
+				vcu_record.accel[2] = 5.1f;
 				vcu_record.vcu_can_id = msg_id;
 				vcu_record.vcu_can_dlc = 8;
 				memcpy(vcu_record.vcu_can_data, data, 8);
 				vcu_record.vcu_captured = true;
-				save_crash_record(&vcu_record);
+				vcu_save_crash_record(&vcu_record);
 				vcu_can_captured = true;
 			}
 			
@@ -581,7 +584,7 @@ void parseCanMessages(uint32_t msg_id, uint8_t data[8]){
 				bms_record.bms_can_dlc = 8;
 				memcpy(bms_record.bms_can_data, data, 8);
 				bms_record.bms_captured = true;
-				save_crash_record(&bms_record);
+				bms_save_crash_record(&bms_record);
 				bms_can_captured = true;
 			}
 
@@ -614,70 +617,109 @@ void parseCanMessages(uint32_t msg_id, uint8_t data[8]){
 		}
 }
 
-void save_crash_record(crash_record_t *record) {
+void vcu_save_crash_record(crash_record_t *record) {
     nvs_handle_t nvs;
-    if (nvs_open("crash_log", NVS_READWRITE, &nvs) != ESP_OK) return;
+    if (nvs_open("vcu_crash_log", NVS_READWRITE, &nvs) != ESP_OK) return;
 
-    nvs_set_u8(nvs, "crash_flag", 1);
-    nvs_set_blob(nvs, "crash_record", record, sizeof(crash_record_t));
+    nvs_set_u8(nvs, "vcu_crash_flag", 1);
+    nvs_set_blob(nvs, "vcu_crash_record", record, sizeof(crash_record_t));
     nvs_commit(nvs);
     nvs_close(nvs);
-    printf("Crash record saved.\n");
+    printf("vcu Crash record saved.\n");
 }
 
-void read_crash_record() {
+void bms_save_crash_record(crash_record_t *record) {
     nvs_handle_t nvs;
-    if (nvs_open("crash_log", NVS_READONLY, &nvs) != ESP_OK) return;
+    if (nvs_open("bms_crash_log", NVS_READWRITE, &nvs) != ESP_OK) return;
 
-    uint8_t crash_flag = 0;
-    if (nvs_get_u8(nvs, "crash_flag", &crash_flag) != ESP_OK || crash_flag != 1) {
+    nvs_set_u8(nvs, "bms_crash_flag", 1);
+    nvs_set_blob(nvs, "bms_crash_record", record, sizeof(crash_record_t));
+    nvs_commit(nvs);
+    nvs_close(nvs);
+    printf("bms Crash record saved.\n");
+}
+
+void vcu_read_record() {
+    nvs_handle_t nvs;
+    if (nvs_open("vcu_crash_log", NVS_READONLY, &nvs) != ESP_OK) return;
+
+    uint8_t flag = 0;
+    if (nvs_get_u8(nvs, "vcu_crash_flag", &flag) != ESP_OK  || flag != 1) {
+        printf("No VCU crash record.\n");
         nvs_close(nvs);
-        printf("No crash record found.\n");
         return;
     }
 
     crash_record_t record;
     size_t size = sizeof(record);
-    if (nvs_get_blob(nvs, "crash_record", &record, &size) == ESP_OK) {
-        printf("=== CRASH DETECTED ===\n");
+    if (nvs_get_blob(nvs, "vcu_crash_record", &record, &size) == ESP_OK) {
+        printf("=== VCU CRASH ===\n");
         printf("G-Force: %.2f g\n", record.g_force);
         printf("Accel: [%.2f, %.2f, %.2f]\n", record.accel[0], record.accel[1], record.accel[2]);
-
-        if (record.bms_captured) {
-            printf("--- BMS Message ---\n");
-            printf("CAN Msg ID: 0x%lX, DLC: %d\n", record.bms_can_id, record.bms_can_dlc);
-            printf("Data: ");
-            for (int i = 0; i < record.bms_can_dlc; i++)
-                printf("%02X ", record.bms_can_data[i]);
-            printf("\n");
-        }
-
-        if (record.vcu_captured) {
-            printf("--- VCU Message ---\n");
-            printf("CAN Msg ID: 0x%lX, DLC: %d\n", record.vcu_can_id, record.vcu_can_dlc);
-            printf("Data: ");
-            for (int i = 0; i < record.vcu_can_dlc; i++)
-                printf("%02X ", record.vcu_can_data[i]);
-            printf("\n");
-        }
+        printf("CAN Msg ID: 0x%lX, DLC: %d\n", record.vcu_can_id, record.vcu_can_dlc);
+        printf("Data: ");
+        for (int i = 0; i < record.vcu_can_dlc; i++) printf("%02X ", record.vcu_can_data[i]);
+        printf("\n");
     }
     nvs_close(nvs);
 }
 
-void erase_crash_record() {
+void bms_read_record() {
     nvs_handle_t nvs;
-    if (nvs_open("crash_log", NVS_READWRITE, &nvs) != ESP_OK) return;
+    if (nvs_open("bms_crash_log", NVS_READONLY, &nvs) != ESP_OK) return;
 
-    nvs_erase_key(nvs, "crash_flag");
-    nvs_erase_key(nvs, "crash_record");
+    uint8_t flag = 0;
+    if (nvs_get_u8(nvs, "bms_crash_flag", &flag) != ESP_OK || flag != 1) {
+        printf("No BMS crash record.\n");
+        nvs_close(nvs);
+        return;
+    }
+
+    crash_record_t record;
+    size_t size = sizeof(record);
+    if (nvs_get_blob(nvs, "bms_crash_record", &record, &size) == ESP_OK) {
+        printf("=== BMS CRASH ===\n");
+        printf("G-Force: %.2f g\n", record.g_force);
+        printf("Accel: [%.2f, %.2f, %.2f]\n", record.accel[0], record.accel[1], record.accel[2]);
+        printf("CAN Msg ID: 0x%lX, DLC: %d\n", record.bms_can_id, record.bms_can_dlc);
+        printf("Data: ");
+        for (int i = 0; i < record.bms_can_dlc; i++) printf("%02X ", record.bms_can_data[i]);
+        printf("\n");
+    }
+    nvs_close(nvs);
+}
+
+void vcu_erase_record() {
+    nvs_handle_t nvs;
+    if (nvs_open("vcu_crash_log", NVS_READWRITE, &nvs) != ESP_OK) return;
+
+    nvs_erase_key(nvs, "vcu_crash_flag");
+    nvs_erase_key(nvs, "vcu_crash_record");
     nvs_commit(nvs);
     nvs_close(nvs);
     vcu_can_captured = false;
-	bms_can_captured = false;
-    printf("Crash record erased.\n");
+    printf("VCU Crash record erased.\n");
+}
+
+void bms_erase_record() {
+    nvs_handle_t nvs;
+    if (nvs_open("bms_crash_log", NVS_READWRITE, &nvs) != ESP_OK) return;
+
+    nvs_erase_key(nvs, "bms_crash_flag");
+    nvs_erase_key(nvs, "bms_crash_record");
+    nvs_commit(nvs);
+    nvs_close(nvs);
+    bms_can_captured = false;
+    printf("BMS Crash record erased.\n");
 }
 
 void handle_crash_event() {
-    if (imu_crash_event == 2) read_crash_record();
-    else if (imu_crash_event == 3) erase_crash_record();
+    if (imu_crash_event == 2) {
+		vcu_read_record();
+		bms_read_record();
+	}
+    else if (imu_crash_event == 3){
+		vcu_erase_record();
+		bms_erase_record();
+	} 
 }
