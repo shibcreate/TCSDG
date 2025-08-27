@@ -124,7 +124,7 @@ void app_main(void)
     }
     ESP_ERROR_CHECK(ret);
 
-	handle_crash_event();
+	handle_crash_event();   
 
     setup_i2c_and_ssd1306();
     ESP_LOGI(TAG, "%s",BITRATE);
@@ -163,7 +163,8 @@ void stateManagerTask(void* parameter){
         switch (currentState)
         {
         case SENDING_STATE: //Master sends to lora and receives from can
-            canReceive();
+			//handle_crash_event();    
+			canReceive();
             handleSendState();
             break;
         case RECEIVING_STATE: //Master receives from lora and sends to can
@@ -619,40 +620,70 @@ void parseCanMessages(uint32_t msg_id, uint8_t data[8]){
 
 void vcu_save_crash_record(crash_record_t *record) {
     nvs_handle_t nvs;
-    if (nvs_open("vcu_crash_log", NVS_READWRITE, &nvs) != ESP_OK) return;
+    esp_err_t err = nvs_open("v_crash_log", NVS_READWRITE, &nvs);
+    if (err != ESP_OK) {
+        printf("VCU NVS open failed: %s\n", esp_err_to_name(err));
+        return;
+    }
 
-    nvs_set_u8(nvs, "vcu_crash_flag", 1);
-    nvs_set_blob(nvs, "vcu_crash_record", record, sizeof(crash_record_t));
-    nvs_commit(nvs);
+    err = nvs_set_u8(nvs, "v_crash_flag", 1);
+    if (err != ESP_OK) printf("VCU flag set failed: %s\n", esp_err_to_name(err));
+
+    err = nvs_set_blob(nvs, "v_crash_record", record, sizeof(crash_record_t));
+    if (err != ESP_OK) printf("VCU blob set failed: %s\n", esp_err_to_name(err));
+
+    err = nvs_commit(nvs);
+    if (err != ESP_OK) printf("VCU commit failed: %s\n", esp_err_to_name(err));
+    else printf("VCU crash record saved successfully.\n");
+
     nvs_close(nvs);
-    printf("vcu Crash record saved.\n");
 }
 
 void bms_save_crash_record(crash_record_t *record) {
     nvs_handle_t nvs;
-    if (nvs_open("bms_crash_log", NVS_READWRITE, &nvs) != ESP_OK) return;
+    esp_err_t err = nvs_open("b_crash_log", NVS_READWRITE, &nvs);
+    if (err != ESP_OK) {
+        printf("BMS NVS open failed: %s\n", esp_err_to_name(err));
+        return;
+    }
 
-    nvs_set_u8(nvs, "bms_crash_flag", 1);
-    nvs_set_blob(nvs, "bms_crash_record", record, sizeof(crash_record_t));
-    nvs_commit(nvs);
+    err = nvs_set_u8(nvs, "b_crash_flag", 1);
+    if (err != ESP_OK) printf("BMS flag set failed: %s\n", esp_err_to_name(err));
+
+    err = nvs_set_blob(nvs, "b_crash_record", record, sizeof(crash_record_t));
+    if (err != ESP_OK) printf("BMS blob set failed: %s\n", esp_err_to_name(err));
+
+    err = nvs_commit(nvs);
+    if (err != ESP_OK) printf("BMS commit failed: %s\n", esp_err_to_name(err));
+    else printf("BMS crash record saved successfully.\n");
+
     nvs_close(nvs);
-    printf("bms Crash record saved.\n");
 }
 
 void vcu_read_record() {
     nvs_handle_t nvs;
-    if (nvs_open("vcu_crash_log", NVS_READONLY, &nvs) != ESP_OK) return;
+    esp_err_t err = nvs_open("v_crash_log", NVS_READONLY, &nvs);
+    if (err != ESP_OK) {
+        printf("Failed to open VCU NVS namespace: %s\n", esp_err_to_name(err));
+        return;
+    }
 
     uint8_t flag = 0;
-    if (nvs_get_u8(nvs, "vcu_crash_flag", &flag) != ESP_OK  || flag != 1) {
-        printf("No VCU crash record.\n");
+    err = nvs_get_u8(nvs, "v_crash_flag", &flag);
+    if (err == ESP_ERR_NVS_NOT_FOUND || flag != 1) {
+        printf("No VCU crash record found.\n");
+        nvs_close(nvs);
+        return;
+    } else if (err != ESP_OK) {
+        printf("Error reading VCU crash flag: %s\n", esp_err_to_name(err));
         nvs_close(nvs);
         return;
     }
 
     crash_record_t record;
     size_t size = sizeof(record);
-    if (nvs_get_blob(nvs, "vcu_crash_record", &record, &size) == ESP_OK) {
+    err = nvs_get_blob(nvs, "v_crash_record", &record, &size);
+    if (err == ESP_OK) {
         printf("=== VCU CRASH ===\n");
         printf("G-Force: %.2f g\n", record.g_force);
         printf("Accel: [%.2f, %.2f, %.2f]\n", record.accel[0], record.accel[1], record.accel[2]);
@@ -660,24 +691,41 @@ void vcu_read_record() {
         printf("Data: ");
         for (int i = 0; i < record.vcu_can_dlc; i++) printf("%02X ", record.vcu_can_data[i]);
         printf("\n");
+    } else if (err == ESP_ERR_NVS_NOT_FOUND) {
+        printf("VCU crash record not found in NVS.\n");
+    } else if (err == ESP_ERR_NVS_INVALID_LENGTH) {
+        printf("VCU crash record size mismatch (invalid length).\n");
+    } else {
+        printf("Failed to read VCU crash record: %s\n", esp_err_to_name(err));
     }
+
     nvs_close(nvs);
 }
 
 void bms_read_record() {
     nvs_handle_t nvs;
-    if (nvs_open("bms_crash_log", NVS_READONLY, &nvs) != ESP_OK) return;
+    esp_err_t err = nvs_open("b_crash_log", NVS_READONLY, &nvs);
+    if (err != ESP_OK) {
+        printf("Failed to open BMS NVS namespace: %s\n", esp_err_to_name(err));
+        return;
+    }
 
     uint8_t flag = 0;
-    if (nvs_get_u8(nvs, "bms_crash_flag", &flag) != ESP_OK || flag != 1) {
-        printf("No BMS crash record.\n");
+    err = nvs_get_u8(nvs, "b_crash_flag", &flag);
+    if (err == ESP_ERR_NVS_NOT_FOUND || flag != 1) {
+        printf("No BMS crash record found.\n");
+        nvs_close(nvs);
+        return;
+    } else if (err != ESP_OK) {
+        printf("Error reading BMS crash flag: %s\n", esp_err_to_name(err));
         nvs_close(nvs);
         return;
     }
 
     crash_record_t record;
     size_t size = sizeof(record);
-    if (nvs_get_blob(nvs, "bms_crash_record", &record, &size) == ESP_OK) {
+    err = nvs_get_blob(nvs, "b_crash_record", &record, &size);
+    if (err == ESP_OK) {
         printf("=== BMS CRASH ===\n");
         printf("G-Force: %.2f g\n", record.g_force);
         printf("Accel: [%.2f, %.2f, %.2f]\n", record.accel[0], record.accel[1], record.accel[2]);
@@ -685,16 +733,24 @@ void bms_read_record() {
         printf("Data: ");
         for (int i = 0; i < record.bms_can_dlc; i++) printf("%02X ", record.bms_can_data[i]);
         printf("\n");
+    } else if (err == ESP_ERR_NVS_NOT_FOUND) {
+        printf("BMS crash record not found in NVS.\n");
+    } else if (err == ESP_ERR_NVS_INVALID_LENGTH) {
+        printf("BMS crash record size mismatch (invalid length).\n");
+    } else {
+        printf("Failed to read BMS crash record: %s\n", esp_err_to_name(err));
     }
+
     nvs_close(nvs);
 }
 
+
 void vcu_erase_record() {
     nvs_handle_t nvs;
-    if (nvs_open("vcu_crash_log", NVS_READWRITE, &nvs) != ESP_OK) return;
+    if (nvs_open("v_crash_log", NVS_READWRITE, &nvs) != ESP_OK) return;
 
-    nvs_erase_key(nvs, "vcu_crash_flag");
-    nvs_erase_key(nvs, "vcu_crash_record");
+    nvs_erase_key(nvs, "v_crash_flag");
+    nvs_erase_key(nvs, "v_crash_record");
     nvs_commit(nvs);
     nvs_close(nvs);
     vcu_can_captured = false;
@@ -703,10 +759,10 @@ void vcu_erase_record() {
 
 void bms_erase_record() {
     nvs_handle_t nvs;
-    if (nvs_open("bms_crash_log", NVS_READWRITE, &nvs) != ESP_OK) return;
+    if (nvs_open("b_crash_log", NVS_READWRITE, &nvs) != ESP_OK) return;
 
-    nvs_erase_key(nvs, "bms_crash_flag");
-    nvs_erase_key(nvs, "bms_crash_record");
+    nvs_erase_key(nvs, "b_crash_flag");
+    nvs_erase_key(nvs, "b_crash_record");
     nvs_commit(nvs);
     nvs_close(nvs);
     bms_can_captured = false;
