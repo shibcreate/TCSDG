@@ -317,7 +317,6 @@ void parseCanMessages(uint32_t msg_id, uint8_t data[8]){
 			//Scale factors
 			float emeterCurrent = (float)signedCurrent * 1.5258789063e-005f;
 			float emeterVoltage = (float)signedVoltage * 1.5258789063e-005f;
-			
 			printf("CAN R: EMeter Current: %.6f A\n", emeterCurrent);
 			printf("CAN R: EMeter Voltage: %.6f V\n", emeterVoltage);
 			break;
