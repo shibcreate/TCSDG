@@ -18,11 +18,20 @@
 #include "esp_timer.h"
 #include "nvs_flash.h"
 #include "driver/twai.h"
+#include <dht.h>
 
 #define BUTTON_PIN 11
 #define tag "SSD1306"
 
 #define BUF_SIZE 128
+
+//humidity sensor
+// Hardcoded sensor type
+#define SENSOR_TYPE DHT_TYPE_AM2301
+
+// Hardcoded GPIO pin for the data line
+#define DHT_GPIO 4  // Change to your GPIO pin
+
 
 //CRASH STUFF
 typedef struct {
@@ -110,6 +119,9 @@ void vcu_erase_crash_record();
 void bms_erase_crash_record();
 void handle_crash_event();
 
+//Humidity
+void dht_test(void *pvParameters);
+
 static const twai_general_config_t g_config =
 	TWAI_GENERAL_CONFIG_DEFAULT(CONFIG_CTX_GPIO, CONFIG_CRX_GPIO, TWAI_MODE_NORMAL);
 
@@ -153,7 +165,20 @@ void app_main(void)
 
 	ssd1306_clear_screen(&dev, false);
 	xTaskCreate(stateManagerTask, "stateManager", 4096, NULL, 10, &stateManager);
+
+// Pin task to core 1 (the "second" core on ESP32)
+    xTaskCreatePinnedToCore(
+        dht_test,                      // Task function
+        "dht_test",                    // Name of task
+        configMINIMAL_STACK_SIZE * 3,  // Stack size
+        NULL,                          // Task parameters
+        5,                             // Priority
+        NULL,                          // Task handle
+        1                              // Core ID (0 = first core, 1 = second core)
+    );
+
     vTaskSuspend(NULL);
+
 }
 
 void stateManagerTask(void* parameter){
@@ -778,4 +803,25 @@ void handle_crash_event() {
 		vcu_erase_record();
 		bms_erase_record();
 	} 
+}
+
+void dht_test(void *pvParameters)
+{
+    float temperature = 0.0f;
+    float humidity = 0.0f;
+
+    while (1)
+    {
+        if (dht_read_float_data(SENSOR_TYPE, DHT_GPIO, &humidity, &temperature) == ESP_OK)
+        {
+            printf("Humidity: %.1f%% Temp: %.1fC\n", humidity, temperature);
+        }
+        else
+        {
+            printf("Could not read data from sensor\n");
+        }
+
+        // Wait 2 seconds between readings
+        vTaskDelay(pdMS_TO_TICKS(2000));
+    }
 }
