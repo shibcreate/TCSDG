@@ -122,64 +122,12 @@ void handle_crash_event();
 //Humidity
 void dht_test(void *pvParameters);
 
+//CAN TASK
+void canTask(void* arg);
+
 static const twai_general_config_t g_config =
 	TWAI_GENERAL_CONFIG_DEFAULT(CONFIG_CTX_GPIO, CONFIG_CRX_GPIO, TWAI_MODE_NORMAL);
 
-int64_t mode_start_time = 0;
-void app_main(void)
-{
-    esp_err_t ret = nvs_flash_init();
-    if (ret == ESP_ERR_NVS_NO_FREE_PAGES ||
-        ret == ESP_ERR_NVS_NEW_VERSION_FOUND) {
-    ESP_ERROR_CHECK(nvs_flash_erase());
-    ret = nvs_flash_init();
-    }
-    ESP_ERROR_CHECK(ret);
-
-	handle_crash_event();   
-
-    setup_i2c_and_ssd1306();
-    ESP_LOGI(TAG, "%s",BITRATE);
-	ESP_LOGI(TAG, "CTX_GPIO=%d",CONFIG_CTX_GPIO);
-	ESP_LOGI(TAG, "CRX_GPIO=%d",CONFIG_CRX_GPIO);
-
-	ESP_ERROR_CHECK(twai_driver_install(&g_config, &t_config, &f_config));
-	ESP_LOGI(TAG, "Driver installed");
-	ESP_ERROR_CHECK(twai_start());
-	ESP_LOGI(TAG, "Driver started");
-
-	int center, top, bottom;
-
-	top = 2;
-	center = 3; 
-	bottom = 8;
-
-	//BUTTON STUFF
-	gpio_set_direction(BUTTON_PIN, GPIO_MODE_INPUT);
-    gpio_pullup_en(BUTTON_PIN);
-    gpio_pulldown_dis(BUTTON_PIN);
-    gpio_set_intr_type(BUTTON_PIN, GPIO_INTR_ANYEDGE);
-    gpio_install_isr_service(0);
-    gpio_isr_handler_add(BUTTON_PIN, button_isr, NULL);
-	//BUTTON STUFF
-
-	ssd1306_clear_screen(&dev, false);
-	xTaskCreate(stateManagerTask, "stateManager", 4096, NULL, 10, &stateManager);
-
-// Pin task to core 1 (the "second" core on ESP32)
-    xTaskCreatePinnedToCore(
-        dht_test,                      // Task function
-        "dht_test",                    // Name of task
-        configMINIMAL_STACK_SIZE * 3,  // Stack size
-        NULL,                          // Task parameters
-        5,                             // Priority
-        NULL,                          // Task handle
-        1                              // Core ID (0 = first core, 1 = second core)
-    );
-
-    vTaskSuspend(NULL);
-
-}
 
 void stateManagerTask(void* parameter){
     currentState = SENDING_STATE;
@@ -189,11 +137,11 @@ void stateManagerTask(void* parameter){
         {
         case SENDING_STATE: //Master sends to lora and receives from can
 			//handle_crash_event();    
-			canReceive();
+			//canReceive();
             handleSendState();
             break;
         case RECEIVING_STATE: //Master receives from lora and sends to can
-            canSend();
+            //canSend();
             handleReceiveState();
             break;
         case SLEEP_STATE:
@@ -823,4 +771,95 @@ void dht_test(void *pvParameters)
         // Wait 2 seconds between readings
         vTaskDelay(pdMS_TO_TICKS(2000));
     }
+}
+
+void canTask(void* arg){
+ while (1) {
+        switch (currentState) {
+            case SENDING_STATE:
+                // In SENDING_STATE, CAN should RECEIVE
+                canReceive();  
+                break;
+
+            case RECEIVING_STATE:
+                // In RECEIVING_STATE, CAN should SEND
+                canSend();
+                break;
+
+            case SLEEP_STATE:
+                // Idle loop while sleeping
+                //vTaskDelay(pdMS_TO_TICKS(500));
+                break;
+
+            default:
+                
+                break;
+        }
+    }
+
+}
+
+void app_main(void)
+{
+    esp_err_t ret = nvs_flash_init();
+    if (ret == ESP_ERR_NVS_NO_FREE_PAGES ||
+        ret == ESP_ERR_NVS_NEW_VERSION_FOUND) {
+    ESP_ERROR_CHECK(nvs_flash_erase());
+    ret = nvs_flash_init();
+    }
+    ESP_ERROR_CHECK(ret);
+
+	handle_crash_event();   
+
+    setup_i2c_and_ssd1306();
+    ESP_LOGI(TAG, "%s",BITRATE);
+	ESP_LOGI(TAG, "CTX_GPIO=%d",CONFIG_CTX_GPIO);
+	ESP_LOGI(TAG, "CRX_GPIO=%d",CONFIG_CRX_GPIO);
+
+	ESP_ERROR_CHECK(twai_driver_install(&g_config, &t_config, &f_config));
+	ESP_LOGI(TAG, "Driver installed");
+	ESP_ERROR_CHECK(twai_start());
+	ESP_LOGI(TAG, "Driver started");
+
+	int center, top, bottom;
+
+	top = 2;
+	center = 3; 
+	bottom = 8;
+
+	//BUTTON STUFF
+	gpio_set_direction(BUTTON_PIN, GPIO_MODE_INPUT);
+    gpio_pullup_en(BUTTON_PIN);
+    gpio_pulldown_dis(BUTTON_PIN);
+    gpio_set_intr_type(BUTTON_PIN, GPIO_INTR_ANYEDGE);
+    gpio_install_isr_service(0);
+    gpio_isr_handler_add(BUTTON_PIN, button_isr, NULL);
+	//BUTTON STUFF
+
+	ssd1306_clear_screen(&dev, false);
+	xTaskCreate(stateManagerTask, "stateManager", 4096, NULL, 10, &stateManager);
+
+  	xTaskCreatePinnedToCore(
+        canTask,                      // Task function
+        "canTask",                    // Name of task
+        4096,  // Stack size
+        NULL,                          // Task parameters
+        12,                             // Priority
+        NULL,                          // Task handle
+        0                              // Core ID (0 = first core, 1 = second core)
+    );
+
+// Pin task to core 1 (the "second" core on ESP32)
+    xTaskCreatePinnedToCore(
+        dht_test,                      // Task function
+        "dht_test",                    // Name of task
+        configMINIMAL_STACK_SIZE * 3,  // Stack size
+        NULL,                          // Task parameters
+        5,                             // Priority
+        NULL,                          // Task handle
+        1                              // Core ID (0 = first core, 1 = second core)
+    );
+
+    vTaskSuspend(NULL);
+
 }
