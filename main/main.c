@@ -25,7 +25,7 @@ void app_main(void) {
     }
 
     // Start tasks
-    xTaskCreatePinnedToCore(&task_lora, "LORA_TASK", 4096, NULL, 5, NULL, 1);
+    xTaskCreatePinnedToCore(&task_lora, "LORA_TASK", 4096, NULL, 7, NULL, 1);
     xTaskCreatePinnedToCore(&task_web_server, "WEB_SERVER_TASK", 4096, NULL, 5, NULL, 0);
-    xTaskCreatePinnedToCore(&task_uart, "UART_TASK", 4096, NULL, 5, NULL, 0);
+    xTaskCreatePinnedToCore(&task_uart, "UART_TASK", 4096, NULL, 6, NULL, 0);
 }

@@ -105,9 +105,9 @@ void task_lora(void *pv) {
                 ESP_LOGI(TAG, "Received: %.*s", len, rx);
                 parse_lora_message(rx, len);
             }
-            vTaskDelay(pdMS_TO_TICKS(100));
+            vTaskDelay(pdMS_TO_TICKS(1));
         } else {
-            vTaskDelay(pdMS_TO_TICKS(1000));
+            vTaskDelay(pdMS_TO_TICKS(500));
         }
     }
 }
