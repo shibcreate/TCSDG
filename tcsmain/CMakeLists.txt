@@ -6,6 +6,8 @@ set(EXTRA_COMPONENT_DIRS
 ../components/ssd1306
 ../components/dht
 ../components/esp_idf_lib_helpers
+../components/icm42670
+../components/i2cdev
 )
 
 include($ENV{IDF_PATH}/tools/cmake/project.cmake)
