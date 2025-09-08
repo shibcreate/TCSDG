@@ -4,9 +4,7 @@
 #include "freertos/FreeRTOS.h"
 #include "freertos/task.h"
 #include "esp_log.h"
-#include "ssd1306.h"
 #include "esp_flash.h"
-#include "font8x8_basic.h"
 #include "esp_chip_info.h"
 #include "esp_system.h"
 #include "driver/gpio.h"
@@ -22,8 +20,6 @@
 #include <icm42670.h>
 
 #define BUTTON_PIN 11
-#define tag "SSD1306"
-
 #define BUF_SIZE 128
 
 //humidity sensor
@@ -110,12 +106,10 @@ static const char *TAG_IMU = "icm42670";
 #endif
 
 static TaskHandle_t stateManager = NULL;
-SSD1306_t dev;
 void stateManagerTask(void* parameter);
 void handleSendState(void);
 void handleReceiveState(void);
 void handleLightSleepState(void);
-void setup_i2c_and_ssd1306();
 void parseCanMessages(uint32_t msg_id, uint8_t data[8]);
 void canReceive();
 void canSend();
@@ -151,11 +145,11 @@ void stateManagerTask(void* parameter){
         case SENDING_STATE: //Master sends to lora and receives from can
 			//handle_crash_event();    
 			//canReceive();
-            handleSendState();
+            
             break;
         case RECEIVING_STATE: //Master receives from lora and sends to can
             //canSend();
-            handleReceiveState();
+            
             break;
         case SLEEP_STATE:
             handleLightSleepState();
@@ -169,21 +163,8 @@ void stateManagerTask(void* parameter){
     }
 }
 
-void handleSendState(){
-    printf("M1: Sending\n");
-    ssd1306_clear_screen(&dev, false);
-    ssd1306_display_text(&dev, 2, "Mode: Sending", 13, false);
-}
-void handleReceiveState(){
-    printf("M1: Receiving\n");
-    ssd1306_clear_screen(&dev, false);
-    ssd1306_display_text(&dev, 2, "Mode: Receiving", 15, false);
-}
-
 void handleLightSleepState(){
-    ssd1306_clear_screen(&dev, false);
-    ssd1306_display_text(&dev, 2, "Mode: Sleep", 11, false);
-
+    
     esp_err_t ret;
     ret = esp_sleep_enable_ext0_wakeup(BUTTON_PIN, 0);
 
@@ -239,26 +220,6 @@ void canSend(){
         ESP_LOGE(TAG, "Send failed: %s", esp_err_to_name(ret));
     }
 }
-
-void setup_i2c_and_ssd1306() {
-    #if CONFIG_I2C_INTERFACE
-        ESP_LOGI(tag, "INTERFACE is i2c");
-        ESP_LOGI(tag, "CONFIG_SDA_GPIO=%d", CONFIG_SDA_GPIO);
-        ESP_LOGI(tag, "CONFIG_SCL_GPIO=%d", CONFIG_SCL_GPIO);
-        ESP_LOGI(tag, "CONFIG_RESET_GPIO=%d", CONFIG_RESET_GPIO);
-        i2c_master_init(&dev, CONFIG_SDA_GPIO, CONFIG_SCL_GPIO, CONFIG_RESET_GPIO);
-    #endif // CONFIG_I2C_INTERFACE
-    
-    #if CONFIG_FLIP
-        dev._flip = true;
-        ESP_LOGW(tag, "Flip upside down");
-    #endif
-    
-    #if CONFIG_SSD1306_128x64
-        ESP_LOGI(tag, "Panel is 128x64");
-        ssd1306_init(&dev, 128, 64);
-    #endif // CONFIG_SSD1306_128x64
-    }
 
 void parseCanMessages(uint32_t msg_id, uint8_t data[8]){
 	switch (msg_id)
@@ -824,7 +785,6 @@ void app_main(void)
 
 	handle_crash_event();   
 
-    //setup_i2c_and_ssd1306();
     ESP_LOGI(TAG, "%s",BITRATE);
 	ESP_LOGI(TAG, "CTX_GPIO=%d",CONFIG_CTX_GPIO);
 	ESP_LOGI(TAG, "CRX_GPIO=%d",CONFIG_CRX_GPIO);
@@ -836,12 +796,6 @@ void app_main(void)
 
 	ESP_ERROR_CHECK(i2cdev_init());
 
-	int center, top, bottom;
-
-	top = 2;
-	center = 3; 
-	bottom = 8;
-
 	//BUTTON STUFF
 	gpio_set_direction(BUTTON_PIN, GPIO_MODE_INPUT);
     gpio_pullup_en(BUTTON_PIN);
@@ -851,8 +805,7 @@ void app_main(void)
     gpio_isr_handler_add(BUTTON_PIN, button_isr, NULL);
 	//BUTTON STUFF
 
-	//ssd1306_clear_screen(&dev, false);
-	//xTaskCreate(stateManagerTask, "stateManager", 4096, NULL, 5, &stateManager);
+	xTaskCreate(stateManagerTask, "stateManager", 4096, NULL, 5, &stateManager);
 
   	xTaskCreatePinnedToCore(
         canTask,                      // Task function
