@@ -7,11 +7,8 @@ samples = 100
 #data arrays
 em_current = [0.0]*samples
 em_volt = [0.0]*samples
-global motor_speed
 motor_speed = [0.0]*samples
-global bus_current
 bus_current = [0.0]*samples
-global torque_feed
 torque_feed = [0.0]*samples
 command_torque = [0.0]*samples
 throttle_perc = [0.0]*samples

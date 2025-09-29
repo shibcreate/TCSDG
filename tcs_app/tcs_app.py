@@ -1,46 +1,66 @@
 import dearpygui.dearpygui as dpg
 import uart_data_read as udr
+import uart_data_write as udw
 
 import time
 import threading
 
+#init data for dpg graphs
 nsamples = 100
-global time_x
-time_x = [0.0]*nsamples
-global em_curr
-em_curr = [0.0]*nsamples
-global em_volt
-em_volt = [0.0]*nsamples
-global motor_speed
-motor_speed = [0.0]*nsamples
-global bus_current
-bus_current = [0.0]*nsamples
-global torque_feed
-torque_feed = [0.0]*nsamples
-global command_torque
-command_torque = [0.0]*nsamples
-global throttle_perc
-throttle_perc = [0.0]*nsamples
-global steer_angle
-steer_angle = [0.0]*nsamples
-global pack_volt
-pack_volt = [0.0]*nsamples
-global volt_info
-volt_info = [0.0]*nsamples
-global ground
-ground = [0.0]*nsamples
+global time_x, em_curr, em_volt, motor_speed, bus_current, torque_feed, command_torque, throttle_perc, steer_angle, pack_volt, volt_info, ground
 
+time_x = [0.0]*nsamples
+em_curr = [0.0]*nsamples
+em_volt = [0.0]*nsamples
+motor_speed = [0.0]*nsamples
+bus_current = [0.0]*nsamples
+torque_feed = [0.0]*nsamples
+command_torque = [0.0]*nsamples
+throttle_perc = [0.0]*nsamples
+steer_angle = [0.0]*nsamples
+pack_volt = [0.0]*nsamples
+volt_info = [0.0]*nsamples
+ground = [0.0]*nsamples
 
 global pause_check 
 pause_check = False
 
+def refresh():
+    #global decarations of all data
+    global time_x, em_curr, em_volt, motor_speed, bus_current, torque_feed, command_torque, throttle_perc, steer_angle, pack_volt, volt_info, ground
+
+    time_x = [0.0]*nsamples
+    em_curr = [0.0]*nsamples
+    em_volt = [0.0]*nsamples
+    motor_speed = [0.0]*nsamples
+    bus_current = [0.0]*nsamples
+    torque_feed = [0.0]*nsamples
+    command_torque = [0.0]*nsamples
+    throttle_perc = [0.0]*nsamples
+    steer_angle = [0.0]*nsamples
+    pack_volt = [0.0]*nsamples  
+    volt_info = [0.0]*nsamples
+    ground = [0.0]*nsamples
+
+
+def refresh_check():
+    t1 = time.time()
+    while True:
+        t_r = time.time() - t1
+        #print(t_r)
+        if (t_r > (60)):
+            refresh()
+            t1 = time.time()
+            t_r = 0
+               
+
 def update_all():
-    t0 = time.time()
+    t_u = time.time()
     while True:
         #if (pause_check == False):
             for i in range(11):
                 udr.update_data()
-            time_x.append(time.time() - t0) #update time x axis
+            time_x.append(time.time() - t_u) #update time x axis
             em_curr.append(udr.em_current[-1]) #update y axis
             em_volt.append(udr.em_volt[-1])
             motor_speed.append(udr.motor_speed[-1])
@@ -89,7 +109,6 @@ def update_all():
             dpg.fit_axis_data('y_axis10')
 
             #time.sleep(0.1)
-
 
 
 dpg.create_context()
@@ -177,20 +196,35 @@ with dpg.window(label='Graphs', tag='win', width=1980, height = 1080):
 
 #window with buttons
 def call_P1():
-    print("1")
+    udw.send_data("1")
 def call_P2():
-    print("2")
+    udw.send_data("2")
 def call_P3():
-    print("3")
+    udw.send_data("3")
 def call_P4():
-    print("4")
+    udw.send_data("4")
+def call_P5():
+    udw.send_data("5")
+def call_P6():
+    udw.send_data("6")
+def call_P7():
+    udw.send_data("7")
+def call_P8():
+    udw.send_data("8")
+def call_P9():
+    udw.send_data("9")
+
 
 with dpg.window(label='Buttons'):
     dpg.add_button(label="P1", callback=call_P1)
     dpg.add_button(label="P2", callback=call_P2)
     dpg.add_button(label="P3", callback=call_P3)
     dpg.add_button(label="P4", callback=call_P4)
-
+    dpg.add_button(label="P5", callback=call_P5)
+    dpg.add_button(label="P6", callback=call_P6)
+    dpg.add_button(label="P7", callback=call_P7)
+    dpg.add_button(label="P8", callback=call_P8)
+    dpg.add_button(label="P9", callback=call_P9)
 
 
 def pause_graph(sender, data):
@@ -207,8 +241,11 @@ dpg.show_viewport()
 
 #dpg.add_button(label="Pause", callback=pause_graph)
 
-thread = threading.Thread(target=update_all)
-thread.start()
+#list of threads
+thread1 = threading.Thread(target=update_all)
+thread2 = threading.Thread(target=refresh_check)
+thread1.start()
+thread2.start()
 dpg.start_dearpygui()
 
 dpg.destroy_context()
