@@ -19,6 +19,8 @@
 #include <dht.h>
 #include <icm42670.h>
 
+#include <rgb_ledc_controller.h>
+
 #define BUTTON_PIN 11
 #define BUF_SIZE 128
 
@@ -29,6 +31,19 @@
 // Hardcoded GPIO pin for the data line
 #define DHT_GPIO 4  // Change to your GPIO pin
 
+static const char *TAG_RGB = "rainbow_flash";
+
+/* GPIOs for RGB LED */
+#define GPIO_LED_RED   19
+#define GPIO_LED_GREEN 20
+#define GPIO_LED_BLUE  21
+
+// Rainbow colors
+#define RED     0xFF0000
+#define ORANGE  0xFFA500
+#define YELLOW  0xFFFF00
+
+rgb_led_t led1;
 
 //CRASH STUFF
 typedef struct {
@@ -152,6 +167,7 @@ void stateManagerTask(void* parameter){
             
             break;
         case SLEEP_STATE:
+            rgb_led_set_color(&led1, YELLOW);
             handleLightSleepState();
             break;
         default:
@@ -181,6 +197,7 @@ void canReceive() {
 		count = 0;
         if (rx_msg.extd == 0 && rx_msg.rtr == 0) {
             parseCanMessages(rx_msg.identifier, rx_msg.data);
+            vTaskDelay(pdMS_TO_TICKS(1000));
         } else {
             printf("Ignored message: extended=%d, rtr=%d\n", rx_msg.extd, rx_msg.rtr);
         }
@@ -188,9 +205,9 @@ void canReceive() {
     else {
         printf("Error receiving CAN message: %s\n", esp_err_to_name(result));
 		count++;
-		if(count == 15){
-			currentState = SLEEP_STATE;
-		}
+		// if(count == 1000){
+		// 	currentState = SLEEP_STATE;
+		// }
 		
     }
 }
@@ -752,11 +769,13 @@ void canTask(void* arg){
         switch (currentState) {
             case SENDING_STATE:
                 // In SENDING_STATE, CAN should RECEIVE
+                rgb_led_set_color(&led1, RED);
                 canReceive();  
                 break;
 
             case RECEIVING_STATE:
                 // In RECEIVING_STATE, CAN should SEND
+                rgb_led_set_color(&led1, ORANGE);
                 canSend();
                 break;
 
@@ -805,17 +824,27 @@ void app_main(void)
     gpio_isr_handler_add(BUTTON_PIN, button_isr, NULL);
 	//BUTTON STUFF
 
+    //RGB
+     ESP_LOGI(TAG, "Starting Fast Rainbow Flash");
+
+    // Create and initialize RGB LED instance
+    led1 = rgb_led_new(GPIO_LED_RED, GPIO_LED_GREEN, GPIO_LED_BLUE,
+                                 LEDC_CHANNEL_0, LEDC_CHANNEL_1, LEDC_CHANNEL_2);
+    ESP_ERROR_CHECK(rgb_led_init(&led1));
+
+
+
 	xTaskCreate(stateManagerTask, "stateManager", 4096, NULL, 5, &stateManager);
 
-  	xTaskCreatePinnedToCore(
-        canTask,                      // Task function
-        "canTask",                    // Name of task
-        4096,  // Stack size
-        NULL,                          // Task parameters
-        1,                             // Priority
-        NULL,                          // Task handle
-        0                              // Core ID (0 = first core, 1 = second core)
-    );
+  	// xTaskCreatePinnedToCore(
+    //     canTask,                      // Task function
+    //     "canTask",                    // Name of task
+    //     4096,  // Stack size
+    //     NULL,                          // Task parameters
+    //     1,                             // Priority
+    //     NULL,                          // Task handle
+    //     0                              // Core ID (0 = first core, 1 = second core)
+    // );
 
 // Pin task to core 1 (the "second" core on ESP32)
     xTaskCreatePinnedToCore(
