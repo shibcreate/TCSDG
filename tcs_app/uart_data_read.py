@@ -1,7 +1,7 @@
 import serial
 import re
 
-ser = serial.Serial(port='COM7', baudrate=115200) #change to appropriate port per device
+ser = serial.Serial(port='COM6', baudrate=115200) #change to appropriate port per device
 
 samples = 100
 #data arrays
@@ -81,6 +81,10 @@ def update_data():
     #print(count)
 
 
+def send_data(prompt):
+    p_byte = prompt.encode('utf-8')
+    ser.write(p_byte)
+    print(p_byte)
 
 '''
 while True:
