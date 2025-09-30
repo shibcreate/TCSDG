@@ -21,7 +21,7 @@
 
 #include <rgb_ledc_controller.h>
 
-#define BUTTON_PIN 11
+#define BUTTON_PIN 45
 #define BUF_SIZE 128
 
 //humidity sensor
@@ -34,9 +34,9 @@
 static const char *TAG_RGB = "rainbow_flash";
 
 /* GPIOs for RGB LED */
-#define GPIO_LED_RED   19
-#define GPIO_LED_GREEN 20
-#define GPIO_LED_BLUE  21
+#define GPIO_LED_RED   38
+#define GPIO_LED_GREEN 39
+#define GPIO_LED_BLUE  40
 
 // Rainbow colors
 #define RED     0xFF0000
