@@ -3,6 +3,7 @@ import uart_data_read as udr
 
 import time
 import threading
+from queue import Queue
 
 #init data for dpg graphs
 nsamples = 100
@@ -24,6 +25,8 @@ count = 0
 
 global pause
 pause = False
+
+data_q = Queue()
 
 #for warning/error functions, easy to change if needed
 global thresholds
@@ -95,14 +98,14 @@ def update_all():
 
 
         #threshold checks
-        if (em_volt[-1] >= thresholds[0]):
-            thresh_check("em_volt", em_volt[-1], time_x[-1])
+        #if (em_volt[-1] >= thresholds[0]):
+        #    thresh_check("em_volt", em_volt[-1], time_x[-1])
 
 
         #occasional refresh
-        if (count == 5000):
-            refresh()
-            count = 0
+        #if (count == 5000):
+        #    refresh()
+        #    count = 0
 
         #set series x and y to last nsamples
         dpg.set_value('tag_em_curr', [list(time_x), list(em_curr)])
@@ -116,31 +119,13 @@ def update_all():
         dpg.set_value('tag_pvolt', [list(time_x), list(pack_volt)])
         dpg.set_value('tag_volt_info', [list(time_x), list(volt_info)])
         dpg.set_value('tag_ground', [list(time_x), list(ground)])
-        dpg.fit_axis_data('x_axis')
-        dpg.fit_axis_data('y_axis')
-        dpg.fit_axis_data('x_axis1')
-        dpg.fit_axis_data('y_axis1')
-        dpg.fit_axis_data('x_axis2')
-        dpg.fit_axis_data('y_axis2')
-        dpg.fit_axis_data('x_axis3')
-        dpg.fit_axis_data('y_axis3')
-        dpg.fit_axis_data('x_axis4')
-        dpg.fit_axis_data('y_axis4')
-        dpg.fit_axis_data('x_axis5')
-        dpg.fit_axis_data('y_axis5')
-        dpg.fit_axis_data('x_axis6')
-        dpg.fit_axis_data('y_axis6')
-        dpg.fit_axis_data('x_axis7')
-        dpg.fit_axis_data('y_axis7')
-        dpg.fit_axis_data('x_axis8')
-        dpg.fit_axis_data('y_axis8')
-        dpg.fit_axis_data('x_axis9')
-        dpg.fit_axis_data('y_axis9')
-        dpg.fit_axis_data('x_axis10')
-        dpg.fit_axis_data('y_axis10')
-        
-        #time.sleep(0.1)
 
+        # fit axes
+        for i in range(11):
+            dpg.fit_axis_data(f'x_axis{i+1}')
+            dpg.fit_axis_data(f'y_axis{i+1}')
+
+        #time.sleep(0.1)
 
 dpg.create_context()
 
@@ -149,80 +134,80 @@ with dpg.window(label='Graphs', tag='win', width=1980, height = 1080):
     
     with dpg.plot(label='em current vs time', height=300, width=800):
         #create x and y axes, set to auto scale
-        x_axis = dpg.add_plot_axis(dpg.mvXAxis, label='time', tag='x_axis')
-        y_axis = dpg.add_plot_axis(dpg.mvYAxis, label='em current', tag='y_axis')
+        x_axis = dpg.add_plot_axis(dpg.mvXAxis, label='time', tag='x_axis1')
+        y_axis = dpg.add_plot_axis(dpg.mvYAxis, label='em current', tag='y_axis1')
 
-        dpg.add_line_series(x=list(time_x), y=list(em_curr), label='Temp', parent='y_axis', tag='tag_em_curr')
+        dpg.add_line_series(x=list(time_x), y=list(em_curr), label='Temp', parent='y_axis1', tag='tag_em_curr')
     
     with dpg.plot(label='em volt vs time', height=300, width=800):
         #create x and y axes, set to auto scale
-        x_axis = dpg.add_plot_axis(dpg.mvXAxis, label='time', tag='x_axis1')
-        y_axis = dpg.add_plot_axis(dpg.mvYAxis, label='em volt', tag='y_axis1')
+        x_axis = dpg.add_plot_axis(dpg.mvXAxis, label='time', tag='x_axis2')
+        y_axis = dpg.add_plot_axis(dpg.mvYAxis, label='em volt', tag='y_axis2')
 
-        dpg.add_line_series(x=list(time_x), y=list(em_volt), label='Temp', parent='y_axis1', tag='tag_em_volt')
+        dpg.add_line_series(x=list(time_x), y=list(em_volt), label='Temp', parent='y_axis2', tag='tag_em_volt')
 
     with dpg.plot(label='motor speed vs time', height=300, width=800):
         #create x and y axes, set to auto scale
-        x_axis = dpg.add_plot_axis(dpg.mvXAxis, label='time', tag='x_axis2')
-        y_axis = dpg.add_plot_axis(dpg.mvYAxis, label='motor speed', tag='y_axis2')
+        x_axis = dpg.add_plot_axis(dpg.mvXAxis, label='time', tag='x_axis3')
+        y_axis = dpg.add_plot_axis(dpg.mvYAxis, label='motor speed', tag='y_axis3')
 
-        dpg.add_line_series(x=list(time_x), y=list(motor_speed), label='Temp', parent='y_axis2', tag='tag_mspeed')
+        dpg.add_line_series(x=list(time_x), y=list(motor_speed), label='Temp', parent='y_axis3', tag='tag_mspeed')
 
     with dpg.plot(label='bus current vs time', height=300, width=800):
         #create x and y axes, set to auto scale
-        x_axis = dpg.add_plot_axis(dpg.mvXAxis, label='time', tag='x_axis3')
-        y_axis = dpg.add_plot_axis(dpg.mvYAxis, label='bus current', tag='y_axis3')
+        x_axis = dpg.add_plot_axis(dpg.mvXAxis, label='time', tag='x_axis4')
+        y_axis = dpg.add_plot_axis(dpg.mvYAxis, label='bus current', tag='y_axis4')
 
-        dpg.add_line_series(x=list(time_x), y=list(bus_current), label='Temp', parent='y_axis3', tag='tag_bcurr')
+        dpg.add_line_series(x=list(time_x), y=list(bus_current), label='Temp', parent='y_axis4', tag='tag_bcurr')
     
     with dpg.plot(label='torque feed vs time', height=300, width=800):
         #create x and y axes, set to auto scale
-        x_axis = dpg.add_plot_axis(dpg.mvXAxis, label='time', tag='x_axis4')
-        y_axis = dpg.add_plot_axis(dpg.mvYAxis, label='torque feed', tag='y_axis4')
+        x_axis = dpg.add_plot_axis(dpg.mvXAxis, label='time', tag='x_axis5')
+        y_axis = dpg.add_plot_axis(dpg.mvYAxis, label='torque feed', tag='y_axis5')
 
-        dpg.add_line_series(x=list(time_x), y=list(torque_feed), label='Temp', parent='y_axis4', tag='tag_tfeed')
+        dpg.add_line_series(x=list(time_x), y=list(torque_feed), label='Temp', parent='y_axis5', tag='tag_tfeed')
     
     with dpg.plot(label='command torque vs time', height=300, width=800):
         #create x and y axes, set to auto scale
-        x_axis = dpg.add_plot_axis(dpg.mvXAxis, label='time', tag='x_axis5')
-        y_axis = dpg.add_plot_axis(dpg.mvYAxis, label='command torque', tag='y_axis5')
+        x_axis = dpg.add_plot_axis(dpg.mvXAxis, label='time', tag='x_axis6')
+        y_axis = dpg.add_plot_axis(dpg.mvYAxis, label='command torque', tag='y_axis6')
 
-        dpg.add_line_series(x=list(time_x), y=list(command_torque), label='Temp', parent='y_axis5', tag='tag_tcmd')
+        dpg.add_line_series(x=list(time_x), y=list(command_torque), label='Temp', parent='y_axis6', tag='tag_tcmd')
     
     with dpg.plot(label='throttle perc vs time', height=300, width=800):
         #create x and y axes, set to auto scale
-        x_axis = dpg.add_plot_axis(dpg.mvXAxis, label='time', tag='x_axis6')
-        y_axis = dpg.add_plot_axis(dpg.mvYAxis, label='throttle perc', tag='y_axis6')
+        x_axis = dpg.add_plot_axis(dpg.mvXAxis, label='time', tag='x_axis7')
+        y_axis = dpg.add_plot_axis(dpg.mvYAxis, label='throttle perc', tag='y_axis7')
 
-        dpg.add_line_series(x=list(time_x), y=list(throttle_perc), label='Temp', parent='y_axis6', tag='tag_throttle')
+        dpg.add_line_series(x=list(time_x), y=list(throttle_perc), label='Temp', parent='y_axis7', tag='tag_throttle')
 
     with dpg.plot(label='steer angle vs time', height=300, width=800):
         #create x and y axes, set to auto scale
-        x_axis = dpg.add_plot_axis(dpg.mvXAxis, label='time', tag='x_axis7')
-        y_axis = dpg.add_plot_axis(dpg.mvYAxis, label='steer angle', tag='y_axis7')
+        x_axis = dpg.add_plot_axis(dpg.mvXAxis, label='time', tag='x_axis8')
+        y_axis = dpg.add_plot_axis(dpg.mvYAxis, label='steer angle', tag='y_axis8')
 
-        dpg.add_line_series(x=list(time_x), y=list(steer_angle), label='Temp', parent='y_axis7', tag='tag_steer')
+        dpg.add_line_series(x=list(time_x), y=list(steer_angle), label='Temp', parent='y_axis8', tag='tag_steer')
 
     with dpg.plot(label='pack volt vs time', height=300, width=800):
         #create x and y axes, set to auto scale
-        x_axis = dpg.add_plot_axis(dpg.mvXAxis, label='time', tag='x_axis8')
-        y_axis = dpg.add_plot_axis(dpg.mvYAxis, label='pack volt', tag='y_axis8')
+        x_axis = dpg.add_plot_axis(dpg.mvXAxis, label='time', tag='x_axis9')
+        y_axis = dpg.add_plot_axis(dpg.mvYAxis, label='pack volt', tag='y_axis9')
 
-        dpg.add_line_series(x=list(time_x), y=list(pack_volt), label='Temp', parent='y_axis8', tag='tag_pvolt')
+        dpg.add_line_series(x=list(time_x), y=list(pack_volt), label='Temp', parent='y_axis9', tag='tag_pvolt')
 
     with dpg.plot(label='volt info vs time', height=300, width=800):
         #create x and y axes, set to auto scale
-        x_axis = dpg.add_plot_axis(dpg.mvXAxis, label='time', tag='x_axis9')
-        y_axis = dpg.add_plot_axis(dpg.mvYAxis, label='volt info', tag='y_axis9')
+        x_axis = dpg.add_plot_axis(dpg.mvXAxis, label='time', tag='x_axis10')
+        y_axis = dpg.add_plot_axis(dpg.mvYAxis, label='volt info', tag='y_axis10')
 
-        dpg.add_line_series(x=list(time_x), y=list(volt_info), label='Temp', parent='y_axis9', tag='tag_volt_info')
+        dpg.add_line_series(x=list(time_x), y=list(volt_info), label='Temp', parent='y_axis10', tag='tag_volt_info')
 
     with dpg.plot(label='ground vs time', height=300, width=800):
         #create x and y axes, set to auto scale
-        x_axis = dpg.add_plot_axis(dpg.mvXAxis, label='time', tag='x_axis10')
-        y_axis = dpg.add_plot_axis(dpg.mvYAxis, label='ground', tag='y_axis10')
+        x_axis = dpg.add_plot_axis(dpg.mvXAxis, label='time', tag='x_axis11')
+        y_axis = dpg.add_plot_axis(dpg.mvYAxis, label='ground', tag='y_axis11')
 
-        dpg.add_line_series(x=list(time_x), y=list(ground), label='Temp', parent='y_axis10', tag='tag_ground')
+        dpg.add_line_series(x=list(time_x), y=list(ground), label='Temp', parent='y_axis11', tag='tag_ground')
 
 
 #window with buttons
@@ -238,15 +223,9 @@ def call_P9(): udr.send_data("9")
 
 
 with dpg.window(label='Buttons'):
-    dpg.add_button(label="P1", callback=call_P1)
-    dpg.add_button(label="P2", callback=call_P2)
-    dpg.add_button(label="P3", callback=call_P3)
-    dpg.add_button(label="P4", callback=call_P4)
-    dpg.add_button(label="P5", callback=call_P5)
-    dpg.add_button(label="P6", callback=call_P6)
-    dpg.add_button(label="P7", callback=call_P7)
-    dpg.add_button(label="P8", callback=call_P8)
-    dpg.add_button(label="P9", callback=call_P9)
+    with dpg.window(label='Buttons'):
+        for i in range(1, 10):
+            dpg.add_button(label=f"P{i}", callback=globals()[f'call_P{i}'])
 
 
 #WARNING/ERROR LOG STUFF

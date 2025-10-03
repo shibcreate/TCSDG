@@ -24,56 +24,66 @@ count = 0 #for testing latency
 
 
 def update_data():
-    value = ser.readline()
-    valueInString = str(value, 'UTF-8')
-    res = re.split(r'[: ]', valueInString)
-    #print(res)
-    #count = count + 1
+    try:
+        value = ser.readline()
+        valueInString = value.decode('UTF-8', errors='ignore')
+        res = re.split(r'[: ]', valueInString)
+        #print(res)
+        #count = count + 1
 
-    match res[0]: #add more cases for future data
-        case 'EMeter_Current':
-            em_current.append(int(res[2]))
-            #print('em_current:', em_current)
+        match res[0]: #add more cases for future data
+            case 'EMeter_Current':
+                em_current.append(int(res[2]))
+                #print('em_current:', em_current)
 
-        case 'EMeter_Voltage':
-            em_volt.append(int(res[2]))
-            #print('em_volt:', em_volt)
+            case 'EMeter_Voltage':
+                em_volt.append(int(res[2]))
+                #print('em_volt:', em_volt)
 
-        case 'MCM_Motor_Speed':
-            motor_speed.append(int(res[2]))
-            #print('motor_speed:', motor_speed)
+            case 'MCM_Motor_Speed':
+                motor_speed.append(int(res[2]))
+                #print('motor_speed:', motor_speed)
 
-        case 'MCM_DC_Bus_Current':
-            bus_current.append(int(res[2]))
-            #print('bus_current:', bus_current)
+            case 'MCM_DC_Bus_Current':
+                bus_current.append(int(res[2]))
+                #print('bus_current:', bus_current)
 
-        case 'MCM_Torque_Feedback':
-            torque_feed.append(int(res[2]))
-            #print('torque_feed:', torque_feed)
+            case 'MCM_Torque_Feedback':
+                torque_feed.append(int(res[2]))
+                #print('torque_feed:', torque_feed)
 
-        case 'MCM_Commanded_Torque':
-            command_torque.append(int(res[2]))
-            #print('command_torque:', command_torque)
+            case 'MCM_Commanded_Torque':
+                command_torque.append(int(res[2]))
+                #print('command_torque:', command_torque)
 
-        case 'TPS0ThrottlePercent0FF':
-            throttle_perc.append(int(res[2]))
-            #print('throttle_perc:', throttle_perc)
+            case 'TPS0ThrottlePercent0FF':
+                throttle_perc.append(int(res[2]))
+                #print('throttle_perc:', throttle_perc)
 
-        case 'Steering_Angle':
-            steer_angle.append(int(res[2]))
-            #print('steer_angle:', steer_angle)
+            case 'Steering_Angle':
+                steer_angle.append(int(res[2]))
+                #print('steer_angle:', steer_angle)
 
-        case 'Pack_Voltage':
-            pack_volt.append(int(res[2]))
-            #print('pack_volt:', pack_volt)
+            case 'Pack_Voltage':
+                pack_volt.append(int(res[2]))
+                #print('pack_volt:', pack_volt)
 
-        case 'MCM_Voltage_Info':
-            volt_info.append(int(res[2]))
-            #print('volt_info:', volt_info)
+            case 'MCM_Voltage_Info':
+                volt_info.append(int(res[2]))
+                #print('volt_info:', volt_info)
 
-        case 'Ground_Speed':
-            ground.append(int(res[2]))
-            #print('ground: ', ground)
+            case 'Ground_Speed':
+                ground.append(int(res[2]))
+                #print('ground: ', ground)
+    
+    except UnicodeDecodeError as e:
+        print(f"[Decode Error] Invalid start byte encountered: {e}")
+    except IndexError as e:
+        print(f"[Index Error] Incomplete data received: {e}")
+    except ValueError as e:
+        print(f"[Value Error] Could not convert to integer: {e}")
+    except Exception as e:
+        print(f"[Unexpected Error] {e}")
 
     #print(type(ground[0]))
     #print(res[4])
