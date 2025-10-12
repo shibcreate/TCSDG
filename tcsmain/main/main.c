@@ -29,7 +29,7 @@
 #define SENSOR_TYPE DHT_TYPE_AM2301
 
 // Hardcoded GPIO pin for the data line
-#define DHT_GPIO 4  // Change to your GPIO pin
+#define DHT_GPIO 46  // Change to your GPIO pin
 
 static const char *TAG_RGB = "rainbow_flash";
 
@@ -40,7 +40,7 @@ static const char *TAG_RGB = "rainbow_flash";
 
 // Rainbow colors
 #define RED     0xFF0000
-#define ORANGE  0xFFA500
+#define BLUE  0x0000FF
 #define YELLOW  0xFFFF00
 
 rgb_led_t led1;
@@ -158,12 +158,13 @@ void stateManagerTask(void* parameter){
         switch (currentState)
         {
         case SENDING_STATE: //Master sends to lora and receives from can
-			//handle_crash_event();    
-			//canReceive();
+            
+            rgb_led_set_color(&led1, BLUE);
             
             break;
         case RECEIVING_STATE: //Master receives from lora and sends to can
-            //canSend();
+        
+         rgb_led_set_color(&led1, RED);
             
             break;
         case SLEEP_STATE:
@@ -205,9 +206,9 @@ void canReceive() {
     else {
         printf("Error receiving CAN message: %s\n", esp_err_to_name(result));
 		count++;
-		// if(count == 1000){
-		// 	currentState = SLEEP_STATE;
-		// }
+		if(count == 500){
+			currentState = SLEEP_STATE;
+		}
 		
     }
 }
@@ -769,13 +770,13 @@ void canTask(void* arg){
         switch (currentState) {
             case SENDING_STATE:
                 // In SENDING_STATE, CAN should RECEIVE
-                rgb_led_set_color(&led1, RED);
+              //  rgb_led_set_color(&led1, RED);
                 canReceive();  
                 break;
 
             case RECEIVING_STATE:
                 // In RECEIVING_STATE, CAN should SEND
-                rgb_led_set_color(&led1, ORANGE);
+              //  rgb_led_set_color(&led1, BLUE);
                 canSend();
                 break;
 
@@ -836,15 +837,15 @@ void app_main(void)
 
 	xTaskCreate(stateManagerTask, "stateManager", 4096, NULL, 5, &stateManager);
 
-  	// xTaskCreatePinnedToCore(
-    //     canTask,                      // Task function
-    //     "canTask",                    // Name of task
-    //     4096,  // Stack size
-    //     NULL,                          // Task parameters
-    //     1,                             // Priority
-    //     NULL,                          // Task handle
-    //     0                              // Core ID (0 = first core, 1 = second core)
-    // );
+  	xTaskCreatePinnedToCore(
+        canTask,                      // Task function
+        "canTask",                    // Name of task
+        4096,  // Stack size
+        NULL,                          // Task parameters
+        1,                             // Priority
+        NULL,                          // Task handle
+        0                              // Core ID (0 = first core, 1 = second core)
+    );
 
 // Pin task to core 1 (the "second" core on ESP32)
     xTaskCreatePinnedToCore(

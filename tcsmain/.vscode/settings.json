@@ -11,8 +11,8 @@
         "stdlib.h": "c",
         "stdio.h": "c"
     },
-    "idf.port": "/dev/tty.usbmodem101",
+    "idf.port": "/dev/tty.usbmodem1101",
     "idf.espIdfPathWin": "C:\\Users\\jorda\\esp\\v5.4\\esp-idf",
     "idf.toolsPathWin": "C:\\Users\\jorda\\.espressif",
-    "idf.pythonInstallPath": "C:\\Users\\jorda\\.espressif\\tools\\idf-python\\3.11.2\\python.exe"
+    "idf.pythonInstallPath": "/opt/homebrew/bin/python3"
 }
