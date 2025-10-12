@@ -21,7 +21,7 @@
 
 #include <rgb_ledc_controller.h>
 
-#define BUTTON_PIN 45
+#define BUTTON_PIN 1
 #define BUF_SIZE 128
 
 //humidity sensor
@@ -858,7 +858,7 @@ void app_main(void)
         1                              // Core ID (0 = first core, 1 = second core)
     );
 
-	xTaskCreatePinnedToCore(icm42670_wom_test, "icm42670_wom_test", configMINIMAL_STACK_SIZE * 8, NULL, 7, NULL, 1);
+	xTaskCreatePinnedToCore(icm42670_wom_test, "icm42670_wom_test", configMINIMAL_STACK_SIZE * 16, NULL, 7, NULL, 1);
 
     vTaskSuspend(NULL);
 
@@ -873,13 +873,14 @@ void icm42670_wom_test(void *pvParameters)
         .mode = GPIO_MODE_INPUT,
         .pin_bit_mask = BIT(CONFIG_EXAMPLE_INT_INPUT_PIN),
         .pull_down_en = 0,
-        .pull_up_en = 1,
+        .pull_up_en = 0,
     };
     gpio_config(&io_conf);
 
     // init device descriptor and device
     icm42670_t dev = { 0 };
     ESP_ERROR_CHECK(icm42670_init_desc(&dev, I2C_ADDR, PORT, CONFIG_EXAMPLE_I2C_MASTER_SDA, CONFIG_EXAMPLE_I2C_MASTER_SCL));
+    vTaskDelay(pdMS_TO_TICKS(50));
     ESP_ERROR_CHECK(icm42670_init(&dev));
 
     /* config a Wake-On-Motion (WoM) interrupt on ICM42670-pin 2
