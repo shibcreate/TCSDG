@@ -134,6 +134,12 @@ void vcu_erase_crash_record();
 void bms_erase_crash_record();
 void handle_crash_event();
 
+//DATA STUFF
+void init_telemetry_data(void);
+void update_telemetry_value_by_name(const char* name, float value);
+float get_telemetry_value_by_name(const char* name);
+void print_all_telemetry(void);
+
 //Humidity
 void dht_test(void *pvParameters);
 
@@ -177,6 +183,74 @@ void stateManagerTask(void* parameter){
     }
 }
 
+// Managing Data
+// Initialize the 2D telemetry data array
+telemetry_entry_t telemetry_data[TELEM_COUNT] = {
+    [TELEM_EMETER_CURRENT] = {"EMeter_Current", 0.0f},
+    [TELEM_EMETER_VOLTAGE] = {"EMeter_Voltage", 0.0f},
+    [TELEM_MCM_MOTOR_SPEED] = {"Motor_Speed", 0.0f},
+    [TELEM_MCM_DC_BUS_CURRENT] = {"MCM_DC_Bus_Current", 0.0f},
+    [TELEM_MCM_DC_BUS_VOLTAGE] = {"MCM_DC_Bus_Voltage", 0.0f},
+    [TELEM_MCM_INT_INVERT_ENABLE_STATE] = {"MCM_Int_Invert_Enable_State", 0.0f},
+    [TELEM_MCM_INT_INVERTER_STATE] = {"MCM_Int_Inverter_State", 0.0f},
+    [TELEM_MCM_TORQUE_FEEDBACK] = {"MCM_Torque_Feedback", 0.0f},
+    [TELEM_MCM_COMMANDED_TORQUE] = {"MCM_Commanded_Torque", 0.0f},
+    [TELEM_MCM_TORQUE_LIMIT_COMMAND] = {"MCM_Torque_Limit_Command", 0.0f},
+    [TELEM_MCM_SPEED_MODE_ENABLE] = {"MCM_Speed_Mode_Enable", 0.0f},
+    [TELEM_TPS0_CALIB_MIN] = {"TPS0_Calib_Min", 0.0f},
+    [TELEM_TPS0_CALIB_MAX] = {"TPS0_Calib_Max", 0.0f},
+    [TELEM_VCU_WSS_FL_S] = {"VCU_WSS_FL_S", 0.0f},
+    [TELEM_VCU_WSS_FR_S] = {"VCU_WSS_FR_S", 0.0f},
+    [TELEM_VCU_WSS_RL_S] = {"VCU_WSS_RL_S", 0.0f},
+    [TELEM_VCU_WSS_RR_S] = {"VCU_WSS_RR_S", 0.0f},
+    [TELEM_VCU_FAULT_TPS_OUTOFRANGE] = {"VCU_FAULT_TPS_OutOfRange", 0.0f},
+    [TELEM_VCU_FAULT_BPS_OUTOFRANGE] = {"VCU_FAULT_BPS_OutOfRange", 0.0f},
+    [TELEM_VCU_FAULT_TPS_POWERFAILURE] = {"VCU_FAULT_TPS_PowerFailure", 0.0f},
+    [TELEM_VCU_FAULT_BPS_POWERFAILURE] = {"VCU_FAULT_BPS_PowerFailure", 0.0f},
+    [TELEM_VCU_FAULT_TPS_SIGNALFAILURE] = {"VCU_FAULT_TPS_SignalFailure", 0.0f},
+    [TELEM_VCU_FAULT_BPS_SIGNALFAILURE] = {"VCU_FAULT_BPS_SignalFailure", 0.0f},
+    [TELEM_VCU_FAULT_TPS_NOTCALIBRATED] = {"VCU_FAULT_TPS_NotCalibrated", 0.0f},
+    [TELEM_VCU_FAULT_BPS_NOTCALIBRATED] = {"VCU_FAULT_BPS_NotCalibrated", 0.0f},
+    [TELEM_VCU_FAULT_TPS_OUTOFSYNC] = {"VCU_FAULT_TPS_OutOfSync", 0.0f},
+    [TELEM_VCU_FAULT_TPSBPS_IMPLAUSIBLE] = {"VCU_FAULT_TPSBPS_Implausible", 0.0f},
+    [TELEM_VCU_FAULT_BSPD_SOFTFAULT] = {"VCU_FAULT_BSPD_SoftFault", 0.0f},
+    [TELEM_VCU_FAULT_LVS_BATTERYEMPTY] = {"VCU_FAULT_LVS_BatteryEmpty", 0.0f},
+    [TELEM_VCU_WARNING_LVS_BATTERYLOW] = {"VCU_WARNING_LVS_BatteryLow", 0.0f},
+    [TELEM_VCU_NOTICE_HVIL_TERMSENSELOST] = {"VCU_NOTICE_HVIL_TermSenseLost", 0.0f},
+    [TELEM_SPEED_KPH] = {"Speed_KPH", 0.0f},
+    [TELEM_LC_READY] = {"LC_Ready", 0.0f},
+    [TELEM_LC_STATUS] = {"LC_Status", 0.0f},
+    [TELEM_TORQUE] = {"Torque", 0.0f},
+    [TELEM_SLIP_RATIO] = {"Slip_Ratio", 0.0f},
+    [TELEM_START_TORQUE] = {"Start_Torque", 0.0f},
+    [TELEM_STEERING_ANGLE] = {"Steering_Angle", 0.0f},
+    [TELEM_DRS_ENABLE] = {"DRS_Enable", 0.0f},
+    [TELEM_DRS_MODE] = {"DRS_Mode", 0.0f},
+    [TELEM_BMS_PACK_VOLTAGE] = {"Pack_Voltage", 0.0f},
+    [TELEM_BMS_BALANCING_STATE] = {"BMS_Balancing_State", 0.0f},
+    [TELEM_BMS_PACK_HIGH_VOLT_WARNING] = {"BMS_Pack_High_Volt_Warning", 0.0f},
+    [TELEM_BMS_PACK_LOW_VOLT_WARNING] = {"BMS_Pack_Low_Volt_Warning", 0.0f},
+    [TELEM_BMS_CELL_LOW_VOLT_WARNING] = {"BMS_Cell_Low_Volt_Warning", 0.0f},
+    [TELEM_BMS_CELL_HIGH_VOLT_WARNING] = {"BMS_Cell_High_Volt_Warning", 0.0f},
+    [TELEM_BMS_CELL_HIGH_TEMP_WARNING] = {"BMS_Cell_High_Temp_Warning", 0.0f},
+    [TELEM_BMS_CELL_LOW_TEMP_WARNING] = {"BMS_Cell_Low_Temp_Warning", 0.0f},
+    [TELEM_BMS_CELL_VOLT_IMBALANCE_WARNING] = {"BMS_Cell_Volt_Imbalance_Warning", 0.0f},
+    [TELEM_BMS_PACK_HIGH_VOLT_FAULT] = {"BMS_Pack_High_Volt_Fault", 0.0f},
+    [TELEM_BMS_PACK_LOW_VOLT_FAULT] = {"BMS_Pack_Low_Volt_Fault", 0.0f},
+    [TELEM_BMS_CELL_LOW_VOLT_FAULT] = {"BMS_Cell_Low_Volt_Fault", 0.0f},
+    [TELEM_BMS_CELL_HIGH_VOLT_FAULT] = {"BMS_Cell_High_Volt_Fault", 0.0f},
+    [TELEM_BMS_CELL_HIGH_TEMP_FAULT] = {"BMS_Cell_High_Temp_Fault", 0.0f},
+    [TELEM_BMS_CELL_VOLT_IMBALANCE_FAULT] = {"BMS_Cell_Volt_Imbalance_Fault", 0.0f},
+    [TELEM_BMS_BALACING_END_FAULT] = {"BMS_Balacing_End_Fault", 0.0f},
+    [TELEM_LOWEST_CELL_TEMPERATURE] = {"Lowest_Cell_Temperature", 0.0f},
+    [TELEM_HIGHEST_CELL_TEMPERATURE] = {"Highest_Cell_Temperature", 0.0f},
+    [TELEM_LOWEST_CELL_VOLTAGE] = {"Lowest_Cell_Voltage", 0.0f},
+    [TELEM_HIGHEST_CELL_VOLTAGE] = {"Highest_Cell_Voltage", 0.0f},
+    [TELEM_TEMPERATURE] = {"Temperature", 0.0f},
+    [TELEM_HUMIDITY] = {"Humidity", 0.0f},
+    [TELEM_RAW_IMU_READING] = {"Raw_IMU_Reading", 0.0f},
+};
+
 void handleLightSleepState(){
     
     esp_err_t ret;
@@ -195,7 +269,7 @@ void canReceive() {
 		count = 0;
         if (rx_msg.extd == 0 && rx_msg.rtr == 0) {
             parseCanMessages(rx_msg.identifier, rx_msg.data);
-            vTaskDelay(pdMS_TO_TICKS(1000));
+            vTaskDelay(pdMS_TO_TICKS(10));
         } else {
             printf("Ignored message: extended=%d, rtr=%d\n", rx_msg.extd, rx_msg.rtr);
         }
@@ -256,6 +330,9 @@ void parseCanMessages(uint32_t msg_id, uint8_t data[8]){
 			float emeterVoltage = (float)signedVoltage * 1.5258789063e-005f;
 			printf("CAN R: EMeter Current: %.6f A\n", emeterCurrent);
 			printf("CAN R: EMeter Voltage: %.6f V\n", emeterVoltage);
+
+            update_telemetry_value_by_name("EMeter_Current", emeterCurrent);
+            update_telemetry_value_by_name("EMeter_Voltage", emeterVoltage);
 			break;
 		
 		case 0xA5: //MCM_Motor_Position_Info
@@ -265,6 +342,8 @@ void parseCanMessages(uint32_t msg_id, uint8_t data[8]){
 			int16_t sMotorSpeed = (int16_t)rawMotorSpeed;
 			float mcmMotorSpeed = (float)sMotorSpeed;
 			printf("CAN R: MCM MotorSpeed: %.1f RPM\n",mcmMotorSpeed);
+
+            update_telemetry_value_by_name("Motor_Speed", mcmMotorSpeed);
 			break;
 		case 0xA6: //MCM_Current_Info
 
@@ -273,6 +352,8 @@ void parseCanMessages(uint32_t msg_id, uint8_t data[8]){
 			int16_t sDCBusCurrent = (int16_t)rawDCBusCurrent;
 			float mcmDCBusCurrent = (float)sDCBusCurrent * 0.1f;
 			printf("CAN R: MCM DCBus Current: %.2f A\n",mcmDCBusCurrent);
+
+            update_telemetry_value_by_name("MCM_DCBus_Current", mcmDCBusCurrent);
 			break;
 
 		case 0xA7: //MCM_Voltage_Info
@@ -281,6 +362,8 @@ void parseCanMessages(uint32_t msg_id, uint8_t data[8]){
 			int16_t sDCBusVoltage = (int16_t)rawDCBusVoltage;
 			float mcmDCBusVoltage = (float)sDCBusVoltage * 0.1f;
 			printf("CAN R: MCM DCBus Voltage: %.2f V\n",mcmDCBusVoltage);
+
+            update_telemetry_value_by_name("MCM_DCBus_Voltage", mcmDCBusVoltage);
 			break;
 
 		case 0xAA: //MCM_Internal_States
@@ -294,6 +377,9 @@ void parseCanMessages(uint32_t msg_id, uint8_t data[8]){
 			float mcmIntInverterState = (float)rawIntInverterState;
 			printf("CAN R: MCM IntInvert EnableState: %.0f \n",mcmIntInvertEnableState);
 			printf("CAN R: MCM IntInverter State: %.0f \n",mcmIntInverterState);
+
+            update_telemetry_value_by_name("MCM_IntInvert_EnableState", mcmIntInvertEnableState);
+            update_telemetry_value_by_name("MCM_IntInverter_State", mcmIntInverterState);
 			break;
 
 		case 0xAC: //MCM_Torque_And_Timer_Info
@@ -310,6 +396,9 @@ void parseCanMessages(uint32_t msg_id, uint8_t data[8]){
 			float mcmCommandedTorque = (float)sCommandedTorque * 0.1f;
 			printf("CAN R: MCM TorqueFeedback: %.2f Nm\n",mcmTorqueFeedback);
 			printf("CAN R: MCM CommandedTorque: %.2f Nm\n",mcmCommandedTorque);
+
+            update_telemetry_value_by_name("MCM_Torque_Feedback", mcmTorqueFeedback);
+            update_telemetry_value_by_name("MCM_Commanded_Torque", mcmCommandedTorque);
 			break;
 
 		case 0xC0: //MCM_Command_Messages
@@ -325,6 +414,9 @@ void parseCanMessages(uint32_t msg_id, uint8_t data[8]){
 
 			printf("CAN R: MCM TorqueLimitCommand: %.2f Nm\n",mcmTorqueLimitCommand);
 			printf("CAN R: MCM SpeedModeEnable: %.0f \n",mcmSpeedModeEnable);
+
+            update_telemetry_value_by_name("MCM_Torque_Limit_Command", mcmTorqueLimitCommand);
+            update_telemetry_value_by_name("MCM_Speed_Mode_Enable", mcmSpeedModeEnable);
 			break;
 
 		case 0x500: //VCU_TPS0
@@ -338,6 +430,9 @@ void parseCanMessages(uint32_t msg_id, uint8_t data[8]){
 
 			printf("CAN R: TPS0 Calibration Min: %.3f V\n",TPS0CalibMin);
 			printf("CAN R: TPS0 Calibration Max: %.3f V\n",TPS0CalibMax);
+
+            update_telemetry_value_by_name("TPS0_Calibration_Min", TPS0CalibMin);
+            update_telemetry_value_by_name("TPS0_Calibration_Max", TPS0CalibMax);
 			break;
 
 		case 0x505: //VCU_WSS_Smooth
@@ -359,6 +454,11 @@ void parseCanMessages(uint32_t msg_id, uint8_t data[8]){
 			printf("CAN R: VCU_WSS_FR_S: %.2f RPM\n",VCU_WSS_FR_S);
 			printf("CAN R: VCU_WSS_RL_S: %.2f RPM\n",VCU_WSS_RL_S);
 			printf("CAN R: VCU_WSS_RR_S: %.2f RPM\n",VCU_WSS_RR_S);
+
+            update_telemetry_value_by_name("VCU_WSS_FL_S", VCU_WSS_FL_S);
+            update_telemetry_value_by_name("VCU_WSS_FR_S", VCU_WSS_FR_S);
+            update_telemetry_value_by_name("VCU_WSS_RL_S", VCU_WSS_RL_S);
+            update_telemetry_value_by_name("VCU_WSS_RR_S", VCU_WSS_RR_S);
 			break;
 
 		case 0x506: //VCU_Safety_Checker
@@ -411,6 +511,24 @@ void parseCanMessages(uint32_t msg_id, uint8_t data[8]){
 			printf("CAN R: VCU_WARNING_LVS_BatteryLow: %d\n", rawWARNING_LVS_BatteryLow);
 			printf("CAN R: VCU_NOTICE_HVIL_TermSenseLost: %d\n", rawNOTICE_HVIL_TermSenseLost);
 
+            update_telemetry_value_by_name("VCU_Fault_TPS_OutOfRange", rawFAULT_TPS_OutOfRange);
+            update_telemetry_value_by_name("VCU_Fault_BPS_OutOfRange", rawFAULT_BPS_OutOfRange);
+            update_telemetry_value_by_name("VCU_FAULT_TPS_PowerFailure", rawFAULT_TPS_PowerFailure);
+            update_telemetry_value_by_name("VCU_FAULT_BPS_PowerFailure", rawFAULT_BPS_PowerFailure);
+
+            update_telemetry_value_by_name("VCU_FAULT_TPS_SignalFailure", rawFAULT_TPS_SignalFailure);
+            update_telemetry_value_by_name("VCU_FAULT_BPS_SignalFailure", rawFAULT_BPS_SignalFailure);
+            update_telemetry_value_by_name("VCU_FAULT_TPS_NotCalibrated", rawFAULT_TPS_NotCalibrated);
+            update_telemetry_value_by_name("VCU_FAULT_BPS_NotCalibrated", rawFAULT_BPS_NotCalibrated);
+
+            update_telemetry_value_by_name("VCU_FAULT_TPS_OutOfSync", rawFAULT_TPS_OutOfSync);
+            update_telemetry_value_by_name("VCU_FAULT_TPSBPS_Implausible", rawFAULT_TPSBPS_Implausible);
+            update_telemetry_value_by_name("VCU_FAULT_BSPD_SoftFault", rawFAULT_BSPD_SoftFault);
+
+            update_telemetry_value_by_name("VCU_FAULT_LVS_BatteryEmpty", rawFAULT_LVS_BatteryEmpty);
+            update_telemetry_value_by_name("VCU_WARNING_LVS_BatteryLow", rawWARNING_LVS_BatteryLow);
+            update_telemetry_value_by_name("VCU_NOTICE_HVIL_TermSenseLost", rawNOTICE_HVIL_TermSenseLost);
+
 			if (imu_crash_event == 1 && !vcu_can_captured) {
 				crash_record_t vcu_record = {0};
 				vcu_record.g_force = 5.1f;
@@ -433,6 +551,8 @@ void parseCanMessages(uint32_t msg_id, uint8_t data[8]){
 
 			float SpeedKPH = (float)rawSpeedKPH;
 			printf("CAN R: SpeedKPH: %.2f km/h\n", SpeedKPH);
+
+            update_telemetry_value_by_name("Speed_KPH", rawSpeedKPH);
 			break;
 
 		case 0x50B: //Launch_Control
@@ -459,6 +579,12 @@ void parseCanMessages(uint32_t msg_id, uint8_t data[8]){
 			printf("CAN R: Torque: %.2f (Nm) Calculated Torque\n", Torque);
 			printf("CAN R: SlipRatio: %.2f Slip Ratio\n", SlipRatio);
 			printf("CAN R: StartTorque: %.2f Nm\n", StartTorque);
+
+            update_telemetry_value_by_name("LC_Ready", rawLCReady);
+            update_telemetry_value_by_name("LC_Status", rawLCStatus);
+            update_telemetry_value_by_name("Torque", Torque);
+            update_telemetry_value_by_name("Slip_Ratio", SlipRatio);
+            update_telemetry_value_by_name("Start_Torque", StartTorque);
 			break;
 
 		case 0x50C: //DRS_SAS
@@ -475,46 +601,68 @@ void parseCanMessages(uint32_t msg_id, uint8_t data[8]){
 			printf("CAN R: Steering_Angle: %.2f Degrees\n", Steering_Angle);
 			printf("CAN R: DRS_Enable: %d \n", rawDRS_Enable);
 			printf("CAN R: DRS_Mode: %d \n", rawDRS_Mode);
+
+            update_telemetry_value_by_name("Steering_Angle", Steering_Angle);
+            update_telemetry_value_by_name("DRS_Enable", rawDRS_Enable);
+            update_telemetry_value_by_name("DRS_Mode", rawDRS_Mode);
 			break;
 
-		case 0x600: //BMS_Safety_Checker
-			//Pack_Voltage (little e +)
-			uint32_t rawPack_Voltage = (data[6] << 24) | (data[5] << 16)| (data[4] << 8)| (data[3]);
-			//Balancing_State (little e +)
-			uint8_t rawBalancing_State = (data[2]>>7) & 0x01;
-			//Pack_High_Volt_Warning (little e +)
-			uint8_t rawPack_High_Volt_Warning = (data[1]>>7) & 0x01;
-			//Pack_Low_Volt_Warning (little e +)
-			uint8_t rawPack_Low_Volt_Warning = (data[1]>>6) & 0x01;
-			
-			//Cell_Low_Volt_Warning (little e +)
-			uint8_t rawCell_Low_Volt_Warning = (data[1]>>5) & 0x01;
-			//Cell_High_Volt_Warning (little e +)
-			uint8_t rawCell_High_Volt_Warning = (data[1]>>4) & 0x01;
-			//Cell_High_Temp_Warning (little e +)
-			uint8_t rawCell_High_Temp_Warning = (data[1]>>3) & 0x01;
-			//Cell_Low_Temp_Warning (little e +)
-			uint8_t rawCell_Low_Temp_Warning = (data[1]>>2) & 0x01;
+        case 0x600: //BMS_Safety_Checker
+            //Pack_Voltage (little e +)
+            uint32_t rawPack_Voltage = (data[6] << 24) | (data[5] << 16)| (data[4] << 8)| (data[3]);
+            //Balancing_State (little e +)
+            uint8_t rawBalancing_State = (data[2]>>7) & 0x01;
+            //Pack_High_Volt_Warning (little e +)
+            uint8_t rawPack_High_Volt_Warning = (data[1]>>7) & 0x01;
+            //Pack_Low_Volt_Warning (little e +)
+            uint8_t rawPack_Low_Volt_Warning = (data[1]>>6) & 0x01;
+    
+            //Cell_Low_Volt_Warning (little e +)
+            uint8_t rawCell_Low_Volt_Warning = (data[1]>>5) & 0x01;
+            //Cell_High_Volt_Warning (little e +)
+            uint8_t rawCell_High_Volt_Warning = (data[1]>>4) & 0x01;
+            //Cell_High_Temp_Warning (little e +)
+            uint8_t rawCell_High_Temp_Warning = (data[1]>>3) & 0x01;
+            //Cell_Low_Temp_Warning (little e +)
+            uint8_t rawCell_Low_Temp_Warning = (data[1]>>2) & 0x01;
 
-			//Cell_Volt_Imbalance_Warning (little e +)
-			uint8_t rawCell_Volt_Imbalance_Warning = (data[1]>>1) & 0x01;
-			//Pack_High_Volt_Fault (little e +)
-			uint8_t rawPack_High_Volt_Fault = (data[0]>>7) & 0x01;
-			//Pack_Low_Volt_Fault (little e +)
-			uint8_t rawPack_Low_Volt_Fault = (data[0]>>6) & 0x01;
-			//Cell_Low_Volt_Fault (little e +)
-			uint8_t rawCell_Low_Volt_Fault = (data[0]>>5) & 0x01;
+            //Cell_Volt_Imbalance_Warning (little e +)
+            uint8_t rawCell_Volt_Imbalance_Warning = (data[1]>>1) & 0x01;
+            //Pack_High_Volt_Fault (little e +)
+            uint8_t rawPack_High_Volt_Fault = (data[0]>>7) & 0x01;
+            //Pack_Low_Volt_Fault (little e +)
+            uint8_t rawPack_Low_Volt_Fault = (data[0]>>6) & 0x01;
+            //Cell_Low_Volt_Fault (little e +)
+            uint8_t rawCell_Low_Volt_Fault = (data[0]>>5) & 0x01;
 
-			//Cell_High_Volt_Fault (little e +)
-			uint8_t rawCell_High_Volt_Fault = (data[0]>>4) & 0x01;
-			//Cell_High_Temp_Fault (little e +)
-			uint8_t rawCell_High_Temp_Fault = (data[0]>>3) & 0x01;
-			//Cell_Volt_Imbalance_Fault (little e +)
-			uint8_t rawCell_Volt_Imbalance_Fault = (data[0]>>2) & 0x01;
-			//Balacing_End_Fault (little e +)
-			uint8_t rawBalacing_End_Fault = (data[0]>>1) & 0x01;
+            //Cell_High_Volt_Fault (little e +)
+            uint8_t rawCell_High_Volt_Fault = (data[0]>>4) & 0x01;
+            //Cell_High_Temp_Fault (little e +)
+            uint8_t rawCell_High_Temp_Fault = (data[0]>>3) & 0x01;
+            //Cell_Volt_Imbalance_Fault (little e +)
+            uint8_t rawCell_Volt_Imbalance_Fault = (data[0]>>2) & 0x01;
+            //Balacing_End_Fault (little e +)
+            uint8_t rawBalacing_End_Fault = (data[0]>>1) & 0x01;
 
-			float Pack_Voltage = (float)rawPack_Voltage * 0.0001f;
+            float Pack_Voltage = (float)rawPack_Voltage * 0.0001f;
+
+            // Update all telemetry values by name
+            update_telemetry_value_by_name("Pack_Voltage", Pack_Voltage);
+            update_telemetry_value_by_name("BMS_Balancing_State", (float)rawBalancing_State);
+            update_telemetry_value_by_name("BMS_Pack_High_Volt_Warning", (float)rawPack_High_Volt_Warning);
+            update_telemetry_value_by_name("BMS_Pack_Low_Volt_Warning", (float)rawPack_Low_Volt_Warning);
+            update_telemetry_value_by_name("BMS_Cell_Low_Volt_Warning", (float)rawCell_Low_Volt_Warning);
+            update_telemetry_value_by_name("BMS_Cell_High_Volt_Warning", (float)rawCell_High_Volt_Warning);
+            update_telemetry_value_by_name("BMS_Cell_High_Temp_Warning", (float)rawCell_High_Temp_Warning);
+            update_telemetry_value_by_name("BMS_Cell_Low_Temp_Warning", (float)rawCell_Low_Temp_Warning);
+            update_telemetry_value_by_name("BMS_Cell_Volt_Imbalance_Warning", (float)rawCell_Volt_Imbalance_Warning);
+            update_telemetry_value_by_name("BMS_Pack_High_Volt_Fault", (float)rawPack_High_Volt_Fault);
+            update_telemetry_value_by_name("BMS_Pack_Low_Volt_Fault", (float)rawPack_Low_Volt_Fault);
+            update_telemetry_value_by_name("BMS_Cell_Low_Volt_Fault", (float)rawCell_Low_Volt_Fault);
+            update_telemetry_value_by_name("BMS_Cell_High_Volt_Fault", (float)rawCell_High_Volt_Fault);
+            update_telemetry_value_by_name("BMS_Cell_High_Temp_Fault", (float)rawCell_High_Temp_Fault);
+            update_telemetry_value_by_name("BMS_Cell_Volt_Imbalance_Fault", (float)rawCell_Volt_Imbalance_Fault);
+            update_telemetry_value_by_name("BMS_Balacing_End_Fault", (float)rawBalacing_End_Fault);    
 			
 			printf("CAN R: BMS_Pack_Voltage: %.4f\n", Pack_Voltage);
 			printf("CAN R: BMS_Balancing_State: %d\n", rawBalancing_State);
@@ -571,12 +719,57 @@ void parseCanMessages(uint32_t msg_id, uint8_t data[8]){
 			printf("CAN R: Higest_Cell_Temperature: %.2f C\n", Higest_Cell_Temperature);
 			printf("CAN R: Lowest_Cell_Voltage: %.4f V\n", Lowest_Cell_Voltage);
 			printf("CAN R: Highest_Cell_Voltage: %.4f V\n", Highest_Cell_Voltage);
+
+            update_telemetry_value_by_name("Lowest_Cell_Temperature", Lowest_Cell_Temperature);
+            update_telemetry_value_by_name("Higest_Cell_Temperature", Higest_Cell_Temperature);
+            update_telemetry_value_by_name("Lowest_Cell_Voltage", Lowest_Cell_Voltage);
+            update_telemetry_value_by_name("Highest_Cell_Voltage", Highest_Cell_Voltage);
 			break;
 
 		default:
 		printf("Unknown CAN ID: 0x%03" PRIX32 "\n", msg_id);
 			break;
 		}
+}
+
+//DATA
+void print_all_telemetry(void) {
+    printf("\n=== TELEMETRY DATA ===\n");
+    for (int i = 0; i < TELEM_COUNT; i++) {
+        if (telemetry_data[i].value != 0.0f) { // Only print non-zero values
+            printf("%-35s: %.4f\n", telemetry_data[i].name, telemetry_data[i].value);
+        }
+    }
+    printf("======================\n");
+}
+
+// Get by name
+float get_telemetry_value_by_name(const char* name) {
+    for (int i = 0; i < TELEM_COUNT; i++) {
+        if (strcmp(telemetry_data[i].name, name) == 0) {
+            return telemetry_data[i].value;
+        }
+    }
+    printf("Warning: Telemetry name '%s' not found\n", name);
+    return 0.0f;
+}
+
+// Update by name
+void update_telemetry_value_by_name(const char* name, float value) {
+    for (int i = 0; i < TELEM_COUNT; i++) {
+        if (strcmp(telemetry_data[i].name, name) == 0) {
+            telemetry_data[i].value = value;
+            return;
+        }
+    }
+    printf("Warning: Telemetry name '%s' not found\n", name);
+}
+
+// Initialize telemetry data
+void init_telemetry_data(void) {
+    for (int i = 0; i < TELEM_COUNT; i++) {
+        telemetry_data[i].value = 0.0f;
+    }
 }
 
 void vcu_save_crash_record(crash_record_t *record) {
@@ -751,6 +944,8 @@ void dht_test(void *pvParameters)
         if (dht_read_float_data(SENSOR_TYPE, DHT_GPIO, &humidity, &temperature) == ESP_OK)
         {
             printf("Humidity: %.1f%% Temp: %.1fC\n", humidity, temperature);
+            update_telemetry_value_by_name("Temperature", temperature);
+            update_telemetry_value_by_name("Humidity", humidity);
         }
         else
         {
@@ -801,6 +996,7 @@ void app_main(void)
     ESP_ERROR_CHECK(ret);
 
 	handle_crash_event();   
+    init_telemetry_data();
 
     ESP_LOGI(TAG, "%s",BITRATE);
 	ESP_LOGI(TAG, "CTX_GPIO=%d",CONFIG_CTX_GPIO);
