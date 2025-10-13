@@ -107,7 +107,7 @@ static const twai_timing_config_t t_config = TWAI_TIMING_CONFIG_1MBITS();
 #define BITRATE "Bitrate is 1 Mbit/s"
 #endif
 
-static const char *TAG_IMU = "icm42670";
+static const char *TAG_IMU = "IMU";
 #define PORT 0
 #if defined(CONFIG_EXAMPLE_I2C_ADDRESS_GND)
 #define I2C_ADDR ICM42670_I2C_ADDR_GND
@@ -142,6 +142,7 @@ void canTask(void* arg);
 
 //IMU TASK
 void icm42670_wom_test(void *pvParameters);
+void icm42670_test(void *pvParameters);
 
 static const twai_general_config_t g_config =
 	TWAI_GENERAL_CONFIG_DEFAULT(CONFIG_CTX_GPIO, CONFIG_CRX_GPIO, TWAI_MODE_NORMAL);
@@ -856,88 +857,58 @@ void app_main(void)
         1                              // Core ID (0 = first core, 1 = second core)
     );
 
-	xTaskCreatePinnedToCore(icm42670_wom_test, "icm42670_wom_test", configMINIMAL_STACK_SIZE * 4, NULL, 1, NULL, 1);
+    xTaskCreatePinnedToCore(icm42670_test, "icm42670_test", configMINIMAL_STACK_SIZE * 8, NULL, 5, NULL, 1);
 
     vTaskSuspend(NULL);
 
 }
 
-void icm42670_wom_test(void *pvParameters)
+void icm42670_test(void *pvParameters)
 {
-    // config IO0 as input, pull-up enabled
-    const gpio_config_t io_conf =
-    {
-        .intr_type = GPIO_INTR_DISABLE,
-        .mode = GPIO_MODE_INPUT,
-        .pin_bit_mask = BIT(CONFIG_EXAMPLE_INT_INPUT_PIN),
-        .pull_down_en = 0,
-        .pull_up_en = 0,
-    };
-    gpio_config(&io_conf);
-
     // init device descriptor and device
     icm42670_t dev = { 0 };
-    ESP_ERROR_CHECK(icm42670_init_desc(&dev, I2C_ADDR, PORT, CONFIG_EXAMPLE_I2C_MASTER_SDA, CONFIG_EXAMPLE_I2C_MASTER_SCL));
-    vTaskDelay(pdMS_TO_TICKS(50));
+    ESP_ERROR_CHECK(
+        icm42670_init_desc(&dev, I2C_ADDR, PORT, CONFIG_EXAMPLE_I2C_MASTER_SDA, CONFIG_EXAMPLE_I2C_MASTER_SCL));
     ESP_ERROR_CHECK(icm42670_init(&dev));
 
-    /* config a Wake-On-Motion (WoM) interrupt on ICM42670-pin 2
-     * - interrupt pin on ICM42670 = 2
-     * - signal level is latched
-     * - signal is fully driven (push/pull)
-     * - polarity is active high
-    */
-    const uint8_t int_pin = 2;
-    const icm42670_int_config_t int_config =
-    {
-        .mode = ICM42670_INT_MODE_PULSED,
-        .drive = ICM42670_INT_DRIVE_PUSH_PULL,
-        .polarity = ICM42670_INT_POLARITY_ACTIVE_HIGH,
-    };
-    ESP_ERROR_CHECK(icm42670_config_int_pin(&dev, int_pin, int_config));
+    // enable accelerometer and gyro in low-noise (LN) mode
+    ESP_ERROR_CHECK(icm42670_set_gyro_pwr_mode(&dev, ICM42670_GYRO_ENABLE_LN_MODE));
+    ESP_ERROR_CHECK(icm42670_set_accel_pwr_mode(&dev, ICM42670_ACCEL_ENABLE_LN_MODE));
 
-    // enable interrupt sources (in this case all three axes)
-    icm42670_int_source_t sources = {false};
-    sources.wom_z = true;
-    sources.wom_y = true;
-    sources.wom_z = true;
-    ESP_ERROR_CHECK(icm42670_set_int_sources(&dev, int_pin, sources));
-
-    /* configure Wake-On-Motion (WoM):
-     * - first exceeding of the threshold is considered as WoM event
-     * - the WoM event sources are logically linked by a OR
-     * - the reference measurement for the threshold is taken at startup
-     * - the threshold is set to 100, which corresponds to 0.39*g
-     *      (WoM thresholds are expressed in fixed “mg” independent of the selected Range [0g : 1g]
-     *      Resolution 1g/256=~3.9 mg)
-     */
-    const icm42670_wom_config_t wom_config =
-    {
-        .trigger = ICM42670_WOM_INT_DUR_FIRST,
-        .logical_mode = ICM42670_WOM_INT_MODE_ALL_OR,
-        .reference = ICM42670_WOM_MODE_REF_INITIAL,
-        .wom_y_threshold = 100,
-        .wom_z_threshold = 100,
-        .wom_x_threshold = 100,
-    };
-    ESP_ERROR_CHECK(icm42670_config_wom(&dev, wom_config));
-
-    // set output-data-rate (ODR) and averaging (AVG) on accelerometer
+    /* OPTIONAL */
+    // enable low-pass-filters on accelerometer and gyro
+    ESP_ERROR_CHECK(icm42670_set_accel_lpf(&dev, ICM42670_ACCEL_LFP_53HZ));
+    ESP_ERROR_CHECK(icm42670_set_gyro_lpf(&dev, ICM42670_GYRO_LFP_53HZ));
+    // set output data rate (ODR)
     ESP_ERROR_CHECK(icm42670_set_accel_odr(&dev, ICM42670_ACCEL_ODR_200HZ));
-    ESP_ERROR_CHECK(icm42670_set_accel_avg(&dev, ICM42670_ACCEL_AVG_8X));
+    ESP_ERROR_CHECK(icm42670_set_gyro_odr(&dev, ICM42670_GYRO_ODR_200HZ));
+    // set full scale range (FSR)
+    ESP_ERROR_CHECK(icm42670_set_accel_fsr(&dev, ICM42670_ACCEL_RANGE_16G));
+    ESP_ERROR_CHECK(icm42670_set_gyro_fsr(&dev, ICM42670_GYRO_RANGE_2000DPS));
 
-    // disable gyro and enable accelerometer in low-power (LP) mode
-    ESP_ERROR_CHECK(icm42670_set_gyro_pwr_mode(&dev, ICM42670_GYRO_DISABLE));
-    ESP_ERROR_CHECK(icm42670_set_low_power_clock(&dev, ICM42670_LP_CLK_WUO));
-    ESP_ERROR_CHECK_WITHOUT_ABORT(icm42670_set_accel_pwr_mode(&dev, ICM42670_ACCEL_ENABLE_LP_MODE));
+    // read temperature sensor value once
+    float temperature;
+    ESP_ERROR_CHECK(icm42670_read_temperature(&dev, &temperature));
+    ESP_LOGI(TAG, "Temperature reading: %f", temperature);
 
-    //enable WoM
-    ESP_ERROR_CHECK(icm42670_enable_wom(&dev, true));
+    int16_t raw_reading;
+    uint8_t data_register;
 
-    // now poll intterupt pin for changes
+    /* select which acceleration or gyro value should be read: */
+    // data_register = ICM42670_REG_ACCEL_DATA_X1;
+    // data_register = ICM42670_REG_ACCEL_DATA_Y1;
+    // data_register = ICM42670_REG_ACCEL_DATA_Z1;
+    data_register = ICM42670_REG_GYRO_DATA_X1;
+    // data_register = ICM42670_REG_GYRO_DATA_Y1;
+    // data_register = ICM42670_REG_GYRO_DATA_Z1;
+
+    // now poll selected accelerometer or gyro raw value directly from registers
     while (1)
     {
-        ESP_LOGI(TAG_IMU, "WoM event detected: %s", gpio_get_level(CONFIG_EXAMPLE_INT_INPUT_PIN) ? "true" : "false");
+        ESP_ERROR_CHECK(icm42670_read_raw_data(&dev, data_register, &raw_reading));
+
+        ESP_LOGI(TAG, "Raw accelerometer / gyro reading: %d", raw_reading);
+
         vTaskDelay(pdMS_TO_TICKS(1000));
     }
 }

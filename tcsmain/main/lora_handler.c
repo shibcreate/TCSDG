@@ -1,12 +1,11 @@
 #include "lora_handler.h"
 #include "freertos/FreeRTOS.h"
 #include "freertos/task.h"
-#include "driver/gpio.h"
 #include "esp_log.h"
 #include <stdlib.h>
 #include "ra01s.h"
+#include "main.h"  // For currentState and saved_mode
 
-#define BUTTON_GPIO 34
 static const char *TAG = "LORA_HANDLER";
 
 // Task handles
@@ -47,15 +46,17 @@ void lora_send_fault_warnings(void) {
 // --- Tasks ---
 static void task_master(void *pvParameters) {
     ESP_LOGI(TAG, "LoRa Master Task Started");
+
     while (1) {
         lora_send_telemetry_data();
         lora_send_fault_warnings();
-        vTaskDelay(pdMS_TO_TICKS(1000)); // 1s delay
+        vTaskDelay(pdMS_TO_TICKS(1000));  // 1s delay
     }
 }
 
 static void task_lora_receive(void *pvParameters) {
     ESP_LOGI(TAG, "LoRa Receive Task Started");
+
     while (1) {
         uint8_t rxData[256];
         uint8_t rxLen = LoRaReceive(rxData, sizeof(rxData));
@@ -66,27 +67,42 @@ static void task_lora_receive(void *pvParameters) {
     }
 }
 
-static void task_button_monitor(void *pvParameters) {
-    gpio_reset_pin(BUTTON_GPIO);
-    gpio_set_direction(BUTTON_GPIO, GPIO_MODE_INPUT);
-    gpio_set_pull_mode(BUTTON_GPIO, GPIO_PULLUP_ONLY);
+// --- State monitor ---
+static void task_state_monitor(void *pvParameters) {
+    FINITE_STATES lastState = currentState;
 
-    bool last_state = gpio_get_level(BUTTON_GPIO);
     while (1) {
-        bool state = gpio_get_level(BUTTON_GPIO);
-        if (state == 0 && last_state == 1) { // Button pressed
-            ESP_LOGI(TAG, "Button Pressed: Entering Receive Mode");
-            vTaskSuspend(task_master_handle);
-            xTaskCreatePinnedToCore(&task_lora_receive, "LORA_RECEIVE", 4096, NULL, 5, &task_lora_receive_handle, 0);
-        } else if (state == 1 && last_state == 0) { // Button released
-            ESP_LOGI(TAG, "Button Released: Entering Send Mode");
-            if (task_lora_receive_handle) {
-                vTaskDelete(task_lora_receive_handle);
-                task_lora_receive_handle = NULL;
+        if (currentState != lastState) {
+            ESP_LOGI(TAG, "State changed: %d -> %d", lastState, currentState);
+
+            switch (currentState) {
+                case SENDING_STATE:
+                    if (task_master_handle) vTaskResume(task_master_handle);
+                    if (task_lora_receive_handle) {
+                        vTaskDelete(task_lora_receive_handle);
+                        task_lora_receive_handle = NULL;
+                    }
+                    break;
+
+                case RECEIVING_STATE:
+                    if (task_master_handle) vTaskSuspend(task_master_handle);
+                    if (!task_lora_receive_handle) {
+                        xTaskCreatePinnedToCore(&task_lora_receive, "LORA_RECEIVE", 4096, NULL, 5, &task_lora_receive_handle, 0);
+                    }
+                    break;
+
+                case SLEEP_STATE:
+                    if (task_master_handle) vTaskSuspend(task_master_handle);
+                    if (task_lora_receive_handle) {
+                        vTaskDelete(task_lora_receive_handle);
+                        task_lora_receive_handle = NULL;
+                    }
+                    break;
             }
-            vTaskResume(task_master_handle);
+
+            lastState = currentState;
         }
-        last_state = state;
+
         vTaskDelay(pdMS_TO_TICKS(100));
     }
 }
@@ -104,12 +120,13 @@ void lora_handler_init(void) {
         ESP_LOGE(TAG, "LoRa module not recognized");
         while (1) { vTaskDelay(1); }
     }
+
     LoRaConfig(9, 4, 1, 8, 0, true, false);
 }
 
 void lora_handler_start(void) {
     xTaskCreatePinnedToCore(&task_master, "LORA_MASTER", 4096, NULL, 10, &task_master_handle, 0);
-    xTaskCreatePinnedToCore(&task_button_monitor, "BUTTON_MONITOR", 4096, NULL, 10, NULL, 0);
+    xTaskCreatePinnedToCore(&task_state_monitor, "STATE_MONITOR", 2048, NULL, 10, NULL, 0);
 }
 
 void lora_handler_stop(void) {
