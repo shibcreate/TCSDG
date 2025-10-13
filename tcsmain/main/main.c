@@ -1,6 +1,7 @@
 #include <stdio.h>
 #include <stdlib.h>
 #include <string.h>
+#include "main.h"
 #include "freertos/FreeRTOS.h"
 #include "freertos/task.h"
 #include "esp_log.h"
@@ -11,6 +12,7 @@
 #include "driver/uart.h"
 #include <inttypes.h>
 #include "sdkconfig.h"
+#include "lora_handler.h"
 #include "esp_sleep.h"
 #include "esp_attr.h"
 #include "esp_timer.h"
@@ -62,12 +64,6 @@ typedef struct {
 static uint8_t imu_crash_event = 2; // 1: Write, 2: Read, 3: Erase
 static bool vcu_can_captured = false;
 static bool bms_can_captured = false;
-
-typedef enum {
-    SENDING_STATE,
-    RECEIVING_STATE,
-    SLEEP_STATE
-} FINITE_STATES;
 
 // Global var for current mode
 FINITE_STATES currentState = 0;
@@ -833,7 +829,9 @@ void app_main(void)
                                  LEDC_CHANNEL_0, LEDC_CHANNEL_1, LEDC_CHANNEL_2);
     ESP_ERROR_CHECK(rgb_led_init(&led1));
 
-
+    // Initialize LoRa
+    lora_handler_init();
+    lora_handler_start();
 
 	xTaskCreate(stateManagerTask, "stateManager", 4096, NULL, 5, &stateManager);
 
@@ -858,7 +856,7 @@ void app_main(void)
         1                              // Core ID (0 = first core, 1 = second core)
     );
 
-	xTaskCreatePinnedToCore(icm42670_wom_test, "icm42670_wom_test", configMINIMAL_STACK_SIZE * 16, NULL, 7, NULL, 1);
+	xTaskCreatePinnedToCore(icm42670_wom_test, "icm42670_wom_test", configMINIMAL_STACK_SIZE * 4, NULL, 1, NULL, 1);
 
     vTaskSuspend(NULL);
 
@@ -940,6 +938,6 @@ void icm42670_wom_test(void *pvParameters)
     while (1)
     {
         ESP_LOGI(TAG_IMU, "WoM event detected: %s", gpio_get_level(CONFIG_EXAMPLE_INT_INPUT_PIN) ? "true" : "false");
-        vTaskDelay(pdMS_TO_TICKS(100));
+        vTaskDelay(pdMS_TO_TICKS(1000));
     }
 }
