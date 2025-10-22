@@ -30,12 +30,13 @@ data_q = Queue()
 
 #for warning/error functions, easy to change if needed
 global thresholds
-thresholds = [70, 20, 30]
+thresholds = [300, 200, 250, 0]
 
 #indices for thresholds:
-# 0 - em volt
-# 1 - motor speed
-# ...
+# 0 - pack volt warning
+# 1 - pack volt danger
+# 2 - command torque danger
+# 3 - throttle_perc danger
 
 def refresh():
     #global decarations of all data
@@ -99,9 +100,21 @@ def update_all():
 
 
         #threshold checks
-        if (em_volt[-1] >= thresholds[0]):
-            thresh_check("em_volt", em_volt[-1], time_x[-1])
+        if (pack_volt[-1] < thresholds[0] and pack_volt[-1] > thresholds[1]):
+            thresh_check("pack volt", pack_volt[-1], time_x[-1], 0)
 
+        if (pack_volt[-1] < thresholds[1]):
+            thresh_check("pack volt", pack_volt[-1], time_x[-1], 1)
+        
+        if (command_torque[-1] >= thresholds[2]):
+            thresh_check("command torque", command_torque[-1], time_x[-1], 1)
+        
+        if (throttle_perc[-1] <= thresholds[3]):
+            thresh_check("throttle perc", throttle_perc[-1], time_x[-1], 1)
+
+
+        #power calculations
+        power_calc(bus_current[-1], em_volt[-1])
 
         #occasional refresh
         #if (count == 5000):
@@ -233,8 +246,22 @@ with dpg.window(label='DATA LOG', tag="terminal", pos=(1600, 20), width=150, hei
     dpg.add_text('Terminal: ')
     dpg.add_child_window(tag='log_container', autosize_x=True, height=250, horizontal_scrollbar=True)
 
-def thresh_check(data_type, value, time):
-    msg = f"WARNING: {data_type} exceeded threshold at {time:.2f}s with {value}"
+def thresh_check(data_type, value, time, type):
+    # warning = 0, danger = 1
+    if (type == 0): 
+        msg = f"WARNING: {data_type} exceeded threshold at {time:.2f}s with {value}"
+        dpg.add_text(msg, parent='log_container')
+        dpg.set_y_scroll('log_container', 9999) #auto scroll function
+    
+    if (type == 1): 
+        msg = f"DANGER: {data_type} exceeded threshold at {time:.2f}s with {value}"
+        dpg.add_text(msg, parent='log_container')
+        dpg.set_y_scroll('log_container', 9999) #auto scroll function
+
+
+def power_calc(current, volt):
+    power = current * volt
+    msg = f"CURRENT POWER: {power}"
     dpg.add_text(msg, parent='log_container')
     dpg.set_y_scroll('log_container', 9999) #auto scroll function
 
