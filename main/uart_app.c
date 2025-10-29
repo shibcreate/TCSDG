@@ -81,7 +81,7 @@ void task_uart(void *pv) {
                             if (commands[i].cmd == c) {
                                 *(commands[i].param) = commands[i].param_val;
                                 *(commands[i].flag) = true;
-                                *(commands[i].end_time) = xTaskGetTickCount() + pdMS_TO_TICKS(40000); // 40s
+                                *(commands[i].end_time) = xTaskGetTickCount() + pdMS_TO_TICKS(10000); // 40s
                                 ESP_LOGI(TAG, "Activated cmd %c", c);
                                 found = true;
                                 break;

@@ -159,7 +159,7 @@ void task_lora(void *pv) {
                 }
                 vTaskDelay(pdMS_TO_TICKS(1));
             } else {
-                vTaskDelay(pdMS_TO_TICKS(500));
+                vTaskDelay(pdMS_TO_TICKS(250));
             }
         }
     }
