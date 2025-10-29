@@ -31,7 +31,7 @@
 #define SENSOR_TYPE DHT_TYPE_AM2301
 
 // Hardcoded GPIO pin for the data line
-#define DHT_GPIO 46  // Change to your GPIO pin
+#define DHT_GPIO 45  // Change to your GPIO pin
 
 static const char *TAG_RGB = "rainbow_flash";
 
@@ -167,11 +167,10 @@ void stateManagerTask(void* parameter){
             break;
         case RECEIVING_STATE: //Master receives from lora and sends to can
         
-         rgb_led_set_color(&led1, RED);
+            rgb_led_set_color(&led1, RED);
             
             break;
         case SLEEP_STATE:
-            rgb_led_set_color(&led1, YELLOW);
             handleLightSleepState();
             break;
         default:
@@ -1157,6 +1156,7 @@ void handle_lora_can_command(void) {
     if (ret == ESP_OK) {
         ESP_LOGI("CAN", "Sent %s command on CAN ID 0x%03" PRIX32 " value=%d",
                  lora_cmd.key, msg.identifier, msg.data[0]);
+        rgb_led_set_color(&led1, YELLOW);
     } else {
         ESP_LOGE("CAN", "CAN transmit failed: %s", esp_err_to_name(ret));
     }
