@@ -2,6 +2,7 @@
 #define MAIN_H
 
 #include <stdint.h>
+#include <stdbool.h>
 #include "esp_attr.h"  // for RTC_DATA_ATTR if needed
 
 // Enum definition for finite states
@@ -90,6 +91,15 @@ typedef enum {
     TELEM_COUNT // Total number of telemetry entries
 } telemetry_index_t;
 
+// LoRa command structure
+typedef struct{
+    char key[32];
+    int value;
+    bool new_command;
+} lora_command_t;
+
+extern lora_command_t lora_cmd; 
+
 // Global declaration
 extern telemetry_entry_t telemetry_data[TELEM_COUNT];
 
@@ -98,5 +108,6 @@ void init_telemetry_data(void);
 void update_telemetry_value_by_name(const char* name, float value);
 float get_telemetry_value_by_name(const char* name);
 void print_all_telemetry(void);
+void handle_lora_can_command(void);
 
 #endif // MAIN_H

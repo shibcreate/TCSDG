@@ -3,6 +3,7 @@
 #include "freertos/task.h"
 #include "esp_log.h"
 #include <stdlib.h>
+#include <string.h>
 #include "ra01s.h"
 #include "main.h"  // For currentState and saved_mode
 
@@ -155,15 +156,31 @@ static void task_master(void *pvParameters) {
 }
 
 static void task_lora_receive(void *pvParameters) {
-    ESP_LOGI(TAG, "LoRa Receive Task Started");
+    ESP_LOGI("LoRa", "LoRa Receive Task Started");
+
+    char key[32];
+    int value;
 
     while (1) {
         uint8_t rxData[256];
         uint8_t rxLen = LoRaReceive(rxData, sizeof(rxData));
+
         if (rxLen > 0) {
-            ESP_LOGI(TAG, "Received %d bytes: [%.*s]", rxLen, rxLen, rxData);
+            rxData[rxLen] = '\0';
+            ESP_LOGI("LoRa", "Received: %s", rxData);
+
+            // Accept "PL: Mode 1", "Regen: Mode 2", etc.
+            if (sscanf((char*)rxData, "%31[^:]: Mode %d", key, &value) == 2) {
+                strncpy(lora_cmd.key, key, sizeof(lora_cmd.key)-1);
+                lora_cmd.value = value;
+                lora_cmd.new_command = true;
+                ESP_LOGI("LoRa", "Parsed key=%s, value=%d", key, value);
+            } else {
+                ESP_LOGW("LoRa", "Failed to parse: %s", rxData);
+            }
         }
-        vTaskDelay(pdMS_TO_TICKS(100));
+
+        vTaskDelay(pdMS_TO_TICKS(100)); // Yield to avoid watchdog
     }
 }
 

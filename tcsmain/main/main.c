@@ -183,6 +183,11 @@ void stateManagerTask(void* parameter){
     }
 }
 
+// LoRa managing
+lora_command_t lora_cmd = {.key = "", .value = 0, .new_command = false};
+#define CAN_ID 0x7FF // Same CAN ID for all modes
+void handle_lora_can_command(void);
+
 // Managing Data
 // Initialize the 2D telemetry data array
 telemetry_entry_t telemetry_data[TELEM_COUNT] = {
@@ -284,31 +289,31 @@ void canReceive() {
     }
 }
 
-void canSend(){
-    static const char *TAG = "CAN_SEND";
+// void canSend(){
+//     static const char *TAG = "CAN_SEND";
 
-    twai_message_t msg = {
-        .identifier = 0x7FF,
-        .extd = 0,
-        .data_length_code = 8,
-        .data = {0x00, 0x00, 0x00, 0x00, 0x00, 0x00, 0x00, 0x01}
-    };
+//     twai_message_t msg = {
+//         .identifier = 0x7FF,
+//         .extd = 0,
+//         .data_length_code = 8,
+//         .data = {0x00, 0x00, 0x00, 0x00, 0x00, 0x00, 0x00, 0x01}
+//     };
 
-    twai_status_info_t status_info;
-    twai_get_status_info(&status_info);
+//     twai_status_info_t status_info;
+//     twai_get_status_info(&status_info);
 
-    if (status_info.state != TWAI_STATE_RUNNING) {
-        ESP_LOGE(TAG, "TWAI not running");
-        return;
-    }
+//     if (status_info.state != TWAI_STATE_RUNNING) {
+//         ESP_LOGE(TAG, "TWAI not running");
+//         return;
+//     }
 
-    esp_err_t ret = twai_transmit(&msg, pdMS_TO_TICKS(100));
-    if (ret == ESP_OK) {
-        ESP_LOGI(TAG, "CAN S: Sent ID 0x%03" PRIX32, msg.identifier);
-    } else {
-        ESP_LOGE(TAG, "Send failed: %s", esp_err_to_name(ret));
-    }
-}
+//     esp_err_t ret = twai_transmit(&msg, pdMS_TO_TICKS(100));
+//     if (ret == ESP_OK) {
+//         ESP_LOGI(TAG, "CAN S: Sent ID 0x%03" PRIX32, msg.identifier);
+//     } else {
+//         ESP_LOGE(TAG, "Send failed: %s", esp_err_to_name(ret));
+//     }
+// }
 
 void parseCanMessages(uint32_t msg_id, uint8_t data[8]){
 	switch (msg_id)
@@ -968,8 +973,9 @@ void canTask(void* arg){
 
             case RECEIVING_STATE:
                 // In RECEIVING_STATE, CAN should SEND
-              //  rgb_led_set_color(&led1, BLUE);
-                canSend();
+                // rgb_led_set_color(&led1, BLUE);
+                //canSend();
+                handle_lora_can_command();
                 break;
 
             case SLEEP_STATE:
@@ -1107,4 +1113,54 @@ void icm42670_test(void *pvParameters)
 
         vTaskDelay(pdMS_TO_TICKS(1000));
     }
+}
+
+void handle_lora_can_command(void) {
+    if (!lora_cmd.new_command)
+        return;
+
+    if (lora_cmd.value == 0) {
+        ESP_LOGW("CAN", "Value 0 received for %s, ignoring", lora_cmd.key);
+        lora_cmd.new_command = false;
+        return;
+    }
+
+    twai_message_t msg = {
+        .identifier = CAN_ID,
+        .extd = 0,
+        .data_length_code = 8,
+        .data = {0}  // Clear all bytes
+    };
+
+    // Map key to byte 1
+    if (strcmp(lora_cmd.key, "PL") == 0) {
+        msg.data[0] = (uint8_t)lora_cmd.value;  // Mode 1-3
+    } else if (strcmp(lora_cmd.key, "Regen") == 0) {
+        msg.data[0] = (uint8_t)(lora_cmd.value + 3); // Mode 1-2 mapped to 4-5
+    } else if (strcmp(lora_cmd.key, "Efficiency") == 0) {
+        msg.data[0] = (uint8_t)(lora_cmd.value + 5); // Mode 1-3 mapped to 6-8
+    } else {
+        ESP_LOGW("CAN", "Unknown key %s", lora_cmd.key);
+        lora_cmd.new_command = false;
+        return;
+    }
+
+    // Check TWAI state
+    twai_status_info_t status;
+    twai_get_status_info(&status);
+    if (status.state != TWAI_STATE_RUNNING) {
+        ESP_LOGE("CAN", "TWAI not running");
+        return;
+    }
+
+    esp_err_t ret = twai_transmit(&msg, pdMS_TO_TICKS(100));
+    if (ret == ESP_OK) {
+        ESP_LOGI("CAN", "Sent %s command on CAN ID 0x%03" PRIX32 " value=%d",
+                 lora_cmd.key, msg.identifier, msg.data[0]);
+    } else {
+        ESP_LOGE("CAN", "CAN transmit failed: %s", esp_err_to_name(ret));
+    }
+
+    // Clear the flag
+    lora_cmd.new_command = false;
 }
