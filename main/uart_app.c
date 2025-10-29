@@ -11,24 +11,32 @@ static const char *TAG = "UART";
 
 typedef struct {
     char cmd;
-    int *param;             
+    int *param;
     int param_val;
     bool *flag;
     TickType_t *end_time;
 } uart_cmd_t;
 
 // External state
-extern int drsMode, plMode, torqueLimit;
-extern bool is_drs, is_pl, is_torque;
-extern TickType_t drs_end, pl_end, torque_end;
+extern int PLTargetPower, RegenMode, EfficiencyMode;
+extern bool is_pl, is_regen, is_eff;
+extern TickType_t pl_end, regen_end, eff_end;
 
+// Command mapping
 static uart_cmd_t commands[] = {
-    { '1', &drsMode, 1, &is_drs, &drs_end },
-    { '0', &drsMode, 0, &is_drs, &drs_end },
-    { '2', &plMode,  1, &is_pl,  &pl_end },
-    { '3', &plMode,  2, &is_pl,  &pl_end },
-    { '4', &torqueLimit, 200, &is_torque, &torque_end },
-    { '5', &torqueLimit, 150, &is_torque, &torque_end }
+    // PLTargetPower
+    { '1', &PLTargetPower, 1, &is_pl, &pl_end },
+    { '2', &PLTargetPower, 2, &is_pl, &pl_end },
+    { '3', &PLTargetPower, 3, &is_pl, &pl_end },
+
+    // RegenMode
+    { '4', &RegenMode, 1, &is_regen, &regen_end },
+    { '5', &RegenMode, 2, &is_regen, &regen_end },
+
+    // EfficiencyMode
+    { '6', &EfficiencyMode, 1, &is_eff, &eff_end },
+    { '7', &EfficiencyMode, 2, &is_eff, &eff_end },
+    { '8', &EfficiencyMode, 3, &is_eff, &eff_end }
 };
 #define NUM_CMDS (sizeof(commands)/sizeof(commands[0]))
 
@@ -60,7 +68,6 @@ void task_uart(void *pv) {
     uint8_t buf[128];
 
     while (1) {
-        // Block until an event happens (no need for vTaskDelay)
         if (xQueueReceive(uart_queue, &event, portMAX_DELAY)) {
             switch (event.type) {
                 case UART_DATA: {
@@ -74,7 +81,7 @@ void task_uart(void *pv) {
                             if (commands[i].cmd == c) {
                                 *(commands[i].param) = commands[i].param_val;
                                 *(commands[i].flag) = true;
-                                *(commands[i].end_time) = xTaskGetTickCount() + pdMS_TO_TICKS(40000);
+                                *(commands[i].end_time) = xTaskGetTickCount() + pdMS_TO_TICKS(40000); // 40s
                                 ESP_LOGI(TAG, "Activated cmd %c", c);
                                 found = true;
                                 break;

@@ -12,17 +12,17 @@ typedef struct {
 } lora_mode_t;
 
 // State variables
-extern int drsMode;
-extern int plMode;
-extern int torqueLimit;
+extern int PLTargetPower;    // 1, 2, 3
+extern int RegenMode;        // 1, 2
+extern int EfficiencyMode;   // 1, 2, 3
 
-extern bool is_drs;
 extern bool is_pl;
-extern bool is_torque;
+extern bool is_regen;
+extern bool is_eff;
 
-extern TickType_t drs_end;
 extern TickType_t pl_end;
-extern TickType_t torque_end;
+extern TickType_t regen_end;
+extern TickType_t eff_end;
 
 // API
 int init_lora(void);

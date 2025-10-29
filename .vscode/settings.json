@@ -2,7 +2,7 @@
     "idf.openOcdConfigs": [
         "board/esp32s3-builtin.cfg"
     ],
-    "idf.portWin": "COM14",
+    "idf.portWin": "COM10",
     "idf.flashType": "UART",
     "python-envs.defaultEnvManager": "ms-python.python:system",
     "python-envs.pythonProjects": []

@@ -2,13 +2,14 @@
 #include "ra01s.h"
 #include "esp_log.h"
 #include "driver/gpio.h"
+#include "esp_task_wdt.h"
 #include <stdio.h>
 #include <string.h>
 
 // --- LoRa state variables ---
-int drsMode = 0;
-int plMode = -1;
-int torqueLimit = -1;
+int PLTargetPower = -1;     // 1, 2, 3
+int RegenMode = -1;         // 1, 2
+int EfficiencyMode = -1;    // 1, 2, 3
 
 static uint8_t Pack_Voltage = 0;
 static uint8_t MCM_Motor_Speed = 0;
@@ -16,48 +17,61 @@ static uint8_t VCU_Faults = 0;
 static uint8_t BMS_Faults = 0;
 
 // Flags + timers
-bool is_drs = false, is_pl = false, is_torque = false;
-TickType_t drs_end = 0, pl_end = 0, torque_end = 0;
+bool is_pl = false, is_regen = false, is_eff = false;
+TickType_t pl_end = 0, regen_end = 0, eff_end = 0;
 
 static const char *TAG = "LORA";
 
-// --- Button Handler --- //
+// --- Button Handler ---
 #define BUTTON_GPIO 34
 static volatile bool use_fsk = false;
 
 static void IRAM_ATTR button_isr_handler(void* arg) {
-    use_fsk = !use_fsk; // toggle mode on each press
+    use_fsk = !use_fsk;
 }
 
 // --- Send functions ---
-static void send_drs(void) {
-    uint8_t tx[64];
-    const char *msg = (drsMode == 1) ? "DRS: Manual" : "DRS: Auto";
-    int len = sprintf((char*)tx, "%s", msg);
-    LoRaSend(tx, len, SX126x_TXMODE_SYNC);
-    ESP_LOGI(TAG, "Sent: %s", tx);
-}
-
 static void send_pl(void) {
     uint8_t tx[64];
-    const char *msg = (plMode == 1) ? "PL: Mode 1" : "PL: Mode 2";
+    const char *msg = "PL: Unknown";  // default
+    switch (PLTargetPower) {
+        case 1: msg = "PL: Mode 1"; break;
+        case 2: msg = "PL: Mode 2"; break;
+        case 3: msg = "PL: Mode 3"; break;
+    }
     int len = sprintf((char*)tx, "%s", msg);
     LoRaSend(tx, len, SX126x_TXMODE_SYNC);
     ESP_LOGI(TAG, "Sent: %s", tx);
 }
 
-static void send_torque(void) {
+static void send_regen(void) {
     uint8_t tx[64];
-    int len = sprintf((char*)tx, "TorqueLimit: %d", torqueLimit);
+    const char *msg = "Regen: Unknown";
+    if (RegenMode == 1) msg = "Regen: Mode 1";
+    else if (RegenMode == 2) msg = "Regen: Mode 2";
+    int len = sprintf((char*)tx, "%s", msg);
+    LoRaSend(tx, len, SX126x_TXMODE_SYNC);
+    ESP_LOGI(TAG, "Sent: %s", tx);
+}
+
+static void send_eff(void) {
+    uint8_t tx[64];
+    const char *msg = "Efficiency: Unknown";  // default
+    switch (EfficiencyMode) {
+        case 1: msg = "Efficiency: Mode 1"; break;
+        case 2: msg = "Efficiency: Mode 2"; break;
+        case 3: msg = "Efficiency: Mode 3"; break;
+    }
+    int len = sprintf((char*)tx, "%s", msg);
     LoRaSend(tx, len, SX126x_TXMODE_SYNC);
     ESP_LOGI(TAG, "Sent: %s", tx);
 }
 
 // --- Mode table ---
 static lora_mode_t modes[] = {
-    { "DRS",       &is_drs,    &drs_end,    send_drs },
-    { "PL",        &is_pl,     &pl_end,     send_pl },
-    { "TorqueLim", &is_torque, &torque_end, send_torque }
+    { "PLTargetPower", &is_pl,    &pl_end,    send_pl },
+    { "RegenMode",     &is_regen, &regen_end, send_regen },
+    { "EfficiencyMode",&is_eff,   &eff_end,   send_eff }
 };
 #define NUM_MODES (sizeof(modes)/sizeof(modes[0]))
 
@@ -66,10 +80,10 @@ lora_mode_t *get_lora_modes(int *count) {
     return modes;
 }
 
-// -- Button Init -- //
+// --- Button Init ---
 static void init_button(void) {
     gpio_config_t io_conf = {
-        .intr_type = GPIO_INTR_NEGEDGE, // trigger button press for falling edge
+        .intr_type = GPIO_INTR_NEGEDGE,
         .mode = GPIO_MODE_INPUT,
         .pin_bit_mask = (1ULL << BUTTON_GPIO),
         .pull_down_en = 0,
@@ -86,9 +100,6 @@ int init_lora(void) {
 
     if (use_fsk) {
         ESP_LOGI(TAG, "Using FSK mode");
-        //LoRaInitFSK();
-        //if (LoRaBeginFSK(915000000, 22, 3.3, true) != 0) return -1;
-        //LoRaConfigFSK(50000, 50, 25, 10, 0, true);
         return 0;
     } else {
         ESP_LOGI(TAG, "Using LoRa mode");
@@ -120,16 +131,12 @@ void task_lora(void *pv) {
 
     while (1) {
         if (use_fsk) {
-            // FSK receive-only placeholder
-            // TODO: Implement FSK receive function using nopnop library
-            int fsk_len = 0;  // placeholder for received bytes
+            int fsk_len = 0;
             uint8_t fsk_rx[256];
-            // Example (future):
-            // fsk_len = FSKReceive(fsk_rx, sizeof(fsk_rx));
             if (fsk_len > 0) {
                 ESP_LOGI(TAG, "FSK Received: %.*s", fsk_len, fsk_rx);
             }
-            vTaskDelay(pdMS_TO_TICKS(100)); // small delay to avoid tight loop
+            vTaskDelay(pdMS_TO_TICKS(100));
         } else {
             bool did_send = false;
             for (int i = 0; i < count; i++) {
