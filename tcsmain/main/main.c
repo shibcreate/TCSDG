@@ -123,7 +123,6 @@ void handleReceiveState(void);
 void handleLightSleepState(void);
 void parseCanMessages(uint32_t msg_id, uint8_t data[8]);
 void canReceive();
-void canSend();
 
 //CRASH STUFF
 void vcu_save_crash_record(crash_record_t *record);
@@ -287,32 +286,6 @@ void canReceive() {
 		
     }
 }
-
-// void canSend(){
-//     static const char *TAG = "CAN_SEND";
-
-//     twai_message_t msg = {
-//         .identifier = 0x7FF,
-//         .extd = 0,
-//         .data_length_code = 8,
-//         .data = {0x00, 0x00, 0x00, 0x00, 0x00, 0x00, 0x00, 0x01}
-//     };
-
-//     twai_status_info_t status_info;
-//     twai_get_status_info(&status_info);
-
-//     if (status_info.state != TWAI_STATE_RUNNING) {
-//         ESP_LOGE(TAG, "TWAI not running");
-//         return;
-//     }
-
-//     esp_err_t ret = twai_transmit(&msg, pdMS_TO_TICKS(100));
-//     if (ret == ESP_OK) {
-//         ESP_LOGI(TAG, "CAN S: Sent ID 0x%03" PRIX32, msg.identifier);
-//     } else {
-//         ESP_LOGE(TAG, "Send failed: %s", esp_err_to_name(ret));
-//     }
-// }
 
 void parseCanMessages(uint32_t msg_id, uint8_t data[8]){
 	switch (msg_id)
@@ -973,7 +946,6 @@ void canTask(void* arg){
             case RECEIVING_STATE:
                 // In RECEIVING_STATE, CAN should SEND
                 // rgb_led_set_color(&led1, BLUE);
-                //canSend();
                 handle_lora_can_command();
                 break;
 
