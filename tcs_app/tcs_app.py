@@ -226,19 +226,24 @@ with dpg.window(label='GRAPHS', tag='win', width=1980, height = 1080):
 
 
 #BUTTONS STUFF
-def call_P1(): udr.send_data("1")
-def call_P2(): udr.send_data("2")
-def call_P3(): udr.send_data("3")
-def call_P4(): udr.send_data("4")
-def call_P5(): udr.send_data("5")
-def call_P6(): udr.send_data("6")
-def call_P7(): udr.send_data("7")
-def call_P8(): udr.send_data("8")
-def call_P9(): udr.send_data("9")
+def PL1(): udr.send_data("1")
+def PL2(): udr.send_data("2")
+def PL3(): udr.send_data("3")
+def Regen1(): udr.send_data("4")
+def Regen2(): udr.send_data("5")
+def Eff1(): udr.send_data("6")
+def Eff2(): udr.send_data("7")
+def Eff3(): udr.send_data("8")
 
 with dpg.window(label='BUTTONS', pos=(1600, 300), width=150, height=200):
-    for i in range(1, 10):
-        dpg.add_button(label=f"P{i}", callback=globals()[f'call_P{i}'])
+    dpg.add_button(label="PL_Target_Power_1", callback=PL1)
+    dpg.add_button(label="PL_Target_Power_2", callback=PL2)
+    dpg.add_button(label="PL_Target_Power_3", callback=PL3)
+    dpg.add_button(label="Regen_Mode_1", callback=Regen1)
+    dpg.add_button(label="Regen_Mode_2", callback=Regen2)
+    dpg.add_button(label="Efficiency_Mode_1", callback=Eff1)
+    dpg.add_button(label="Efficiency_Mode_2", callback=Eff2)
+    dpg.add_button(label="Efficiency_Mode_3", callback=Eff3)
 
 
 #WARNING/ERROR LOG STUFF
