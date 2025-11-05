@@ -1,5 +1,5 @@
 {
-    "idf.portWin": "COM10",
+    "idf.portWin": "COM14",
     "idf.customExtraVars": {
         "IDF_TARGET": "esp32s3"
     },
@@ -14,5 +14,5 @@
     "idf.port": "/dev/tty.usbserial-0001",
     "idf.espIdfPathWin": "C:\\Users\\shini\\esp\\v5.4\\esp-idf",
     "idf.toolsPathWin": "C:\\Users\\shini\\.espressif",
-    "idf.pythonInstallPath": "/opt/homebrew/bin/python3"
+    "idf.pythonInstallPath": "C:\\Users\\shini\\.espressif\\tools\\idf-python\\3.11.2\\python.exe"
 }
