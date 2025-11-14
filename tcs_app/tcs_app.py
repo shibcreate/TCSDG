@@ -20,8 +20,8 @@ pack_volt = [0.0]*nsamples
 volt_info = [0.0]*nsamples
 ground = [0.0]*nsamples
 
-global count
-count = 0
+#global count
+#count = 0
 
 global pause
 pause = False
@@ -37,6 +37,14 @@ thresholds = [300, 200, 250, 0]
 # 1 - pack volt danger
 # 2 - command torque danger
 # 3 - throttle_perc danger
+
+
+#graph pos/width/height constants
+GRAPH_WIDTH = 400
+GRAPH_HEIGHT = 200
+GRAPH_POS_XL = 0
+GRAPH_POS_XR = 400
+
 
 def refresh():
     #global decarations of all data
@@ -57,10 +65,10 @@ def refresh():
     ground = [0.0]*nsamples
 
 
-def refresh_check():
-    while True:
-        if (count == 50):
-            refresh()
+#def refresh_check():
+#    while True:
+#        if (count == 50):
+#            refresh()
     '''
     t1 = time.time()
     while True:
@@ -76,15 +84,15 @@ refresh()
 
 #MAIN THREAD
 def update_all():
-    global count
-    count = 0
+    #global count
+    #count = 0
     t_u = time.time()
     while True:
         #if (pause_check == False):
         for i in range(11):
             udr.update_data()
-            count = count + 1
-            print(count)
+            #count = count + 1
+            #print(udr.count)
         time_x.append(time.time() - t_u) #update time x axis
         em_curr.append(udr.em_current[-1]) #update y axis
         em_volt.append(udr.em_volt[-1])
@@ -145,79 +153,79 @@ dpg.create_context()
 
 
 #GRAPHS WINDOWS
-with dpg.window(label='GRAPHS', tag='win', width=1980, height = 1080):
+with dpg.window(label='GRAPHS', tag='win', width=1000, height = 1080):
     
-    with dpg.plot(label='em current vs time', pos=(0, 20), height=250, width=600):
+    with dpg.plot(label='em current vs time', pos=(GRAPH_POS_XL, 20), height=GRAPH_HEIGHT, width=GRAPH_WIDTH):
         #create x and y axes, set to auto scale
         x_axis = dpg.add_plot_axis(dpg.mvXAxis, label='time', tag='x_axis1')
         y_axis = dpg.add_plot_axis(dpg.mvYAxis, label='em current', tag='y_axis1')
 
         dpg.add_line_series(x=list(time_x), y=list(em_curr), label='Temp', parent='y_axis1', tag='tag_em_curr')
     
-    with dpg.plot(label='em volt vs time', pos=(600, 20), height=250, width=600):
+    with dpg.plot(label='em volt vs time', pos=(GRAPH_POS_XR, 20), height=GRAPH_HEIGHT, width=GRAPH_WIDTH):
         #create x and y axes, set to auto scale
         x_axis = dpg.add_plot_axis(dpg.mvXAxis, label='time', tag='x_axis2')
         y_axis = dpg.add_plot_axis(dpg.mvYAxis, label='em volt', tag='y_axis2')
 
         dpg.add_line_series(x=list(time_x), y=list(em_volt), label='Temp', parent='y_axis2', tag='tag_em_volt')
 
-    with dpg.plot(label='motor speed vs time', pos=(0, 270), height=250, width=600):
+    with dpg.plot(label='motor speed vs time', pos=(GRAPH_POS_XL, 270), height=GRAPH_HEIGHT, width=GRAPH_WIDTH):
         #create x and y axes, set to auto scale
         x_axis = dpg.add_plot_axis(dpg.mvXAxis, label='time', tag='x_axis3')
         y_axis = dpg.add_plot_axis(dpg.mvYAxis, label='motor speed', tag='y_axis3')
 
         dpg.add_line_series(x=list(time_x), y=list(motor_speed), label='Temp', parent='y_axis3', tag='tag_mspeed')
 
-    with dpg.plot(label='bus current vs time', pos=(600, 270), height=250, width=600):
+    with dpg.plot(label='bus current vs time', pos=(GRAPH_POS_XR, 270), height=GRAPH_HEIGHT, width=GRAPH_WIDTH):
         #create x and y axes, set to auto scale
         x_axis = dpg.add_plot_axis(dpg.mvXAxis, label='time', tag='x_axis4')
         y_axis = dpg.add_plot_axis(dpg.mvYAxis, label='bus current', tag='y_axis4')
 
         dpg.add_line_series(x=list(time_x), y=list(bus_current), label='Temp', parent='y_axis4', tag='tag_bcurr')
     
-    with dpg.plot(label='torque feed vs time', pos=(0, 520), height=250, width=600):
+    with dpg.plot(label='torque feed vs time', pos=(GRAPH_POS_XL, 520), height=GRAPH_HEIGHT, width=GRAPH_WIDTH):
         #create x and y axes, set to auto scale
         x_axis = dpg.add_plot_axis(dpg.mvXAxis, label='time', tag='x_axis5')
         y_axis = dpg.add_plot_axis(dpg.mvYAxis, label='torque feed', tag='y_axis5')
 
         dpg.add_line_series(x=list(time_x), y=list(torque_feed), label='Temp', parent='y_axis5', tag='tag_tfeed')
     
-    with dpg.plot(label='command torque vs time', pos=(600, 520), height=250, width=600):
+    with dpg.plot(label='command torque vs time', pos=(GRAPH_POS_XR, 520), height=GRAPH_HEIGHT, width=GRAPH_WIDTH):
         #create x and y axes, set to auto scale
         x_axis = dpg.add_plot_axis(dpg.mvXAxis, label='time', tag='x_axis6')
         y_axis = dpg.add_plot_axis(dpg.mvYAxis, label='command torque', tag='y_axis6')
 
         dpg.add_line_series(x=list(time_x), y=list(command_torque), label='Temp', parent='y_axis6', tag='tag_tcmd')
     
-    with dpg.plot(label='throttle perc vs time', pos=(0, 770), height=250, width=600):
+    with dpg.plot(label='throttle perc vs time', pos=(GRAPH_POS_XL, 770), height=GRAPH_HEIGHT, width=GRAPH_WIDTH):
         #create x and y axes, set to auto scale
         x_axis = dpg.add_plot_axis(dpg.mvXAxis, label='time', tag='x_axis7')
         y_axis = dpg.add_plot_axis(dpg.mvYAxis, label='throttle perc', tag='y_axis7')
 
         dpg.add_line_series(x=list(time_x), y=list(throttle_perc), label='Temp', parent='y_axis7', tag='tag_throttle')
 
-    with dpg.plot(label='steer angle vs time', pos=(600, 770), height=250, width=600):
+    with dpg.plot(label='steer angle vs time', pos=(GRAPH_POS_XR, 770), height=GRAPH_HEIGHT, width=GRAPH_WIDTH):
         #create x and y axes, set to auto scale
         x_axis = dpg.add_plot_axis(dpg.mvXAxis, label='time', tag='x_axis8')
         y_axis = dpg.add_plot_axis(dpg.mvYAxis, label='steer angle', tag='y_axis8')
 
         dpg.add_line_series(x=list(time_x), y=list(steer_angle), label='Temp', parent='y_axis8', tag='tag_steer')
 
-    with dpg.plot(label='pack volt vs time', pos=(0, 1020), height=250, width=600):
+    with dpg.plot(label='pack volt vs time', pos=(GRAPH_POS_XL, 1020), height=GRAPH_HEIGHT, width=GRAPH_WIDTH):
         #create x and y axes, set to auto scale
         x_axis = dpg.add_plot_axis(dpg.mvXAxis, label='time', tag='x_axis9')
         y_axis = dpg.add_plot_axis(dpg.mvYAxis, label='pack volt', tag='y_axis9')
 
         dpg.add_line_series(x=list(time_x), y=list(pack_volt), label='Temp', parent='y_axis9', tag='tag_pvolt')
 
-    with dpg.plot(label='volt info vs time', pos=(600, 1020), height=250, width=600):
+    with dpg.plot(label='volt info vs time', pos=(GRAPH_POS_XR, 1020), height=GRAPH_HEIGHT, width=GRAPH_WIDTH):
         #create x and y axes, set to auto scale
         x_axis = dpg.add_plot_axis(dpg.mvXAxis, label='time', tag='x_axis10')
         y_axis = dpg.add_plot_axis(dpg.mvYAxis, label='volt info', tag='y_axis10')
 
         dpg.add_line_series(x=list(time_x), y=list(volt_info), label='Temp', parent='y_axis10', tag='tag_volt_info')
 
-    with dpg.plot(label='ground vs time', pos=(0, 1270), height=250, width=600):
+    with dpg.plot(label='ground vs time', pos=(GRAPH_POS_XL, 1270), height=GRAPH_HEIGHT, width=GRAPH_WIDTH):
         #create x and y axes, set to auto scale
         x_axis = dpg.add_plot_axis(dpg.mvXAxis, label='time', tag='x_axis11')
         y_axis = dpg.add_plot_axis(dpg.mvYAxis, label='ground', tag='y_axis11')
@@ -235,7 +243,7 @@ def Eff1(): udr.send_data("6")
 def Eff2(): udr.send_data("7")
 def Eff3(): udr.send_data("8")
 
-with dpg.window(label='BUTTONS', pos=(1600, 300), width=150, height=200):
+with dpg.window(label='BUTTONS', pos=(1200, 300), width=150, height=250):
     dpg.add_button(label="PL_Target_Power_1", callback=PL1)
     dpg.add_button(label="PL_Target_Power_2", callback=PL2)
     dpg.add_button(label="PL_Target_Power_3", callback=PL3)
@@ -247,9 +255,9 @@ with dpg.window(label='BUTTONS', pos=(1600, 300), width=150, height=200):
 
 
 #WARNING/ERROR LOG STUFF
-with dpg.window(label='DATA LOG', tag="terminal", pos=(1600, 20), width=150, height=250):
+with dpg.window(label='DATA LOG', tag="terminal", pos=(1200, 20), width=500, height=400):
     dpg.add_text('Terminal: ')
-    dpg.add_child_window(tag='log_container', autosize_x=True, height=250, horizontal_scrollbar=True)
+    dpg.add_child_window(tag='log_container', autosize_x=True, width=500, height=400, horizontal_scrollbar=True)
 
 def thresh_check(data_type, value, time, type):
     # warning = 0, danger = 1
@@ -263,12 +271,22 @@ def thresh_check(data_type, value, time, type):
         dpg.add_text(msg, parent='log_container')
         dpg.set_y_scroll('log_container', 9999) #auto scroll function
 
-
 def power_calc(current, volt):
     power = current * volt
     msg = f"CURRENT POWER: {power}"
     dpg.add_text(msg, parent='log_container')
     dpg.set_y_scroll('log_container', 9999) #auto scroll function
+
+
+#DATA COUNTER
+with dpg.window(label='Data Counter', pos=(1200, 20), width=200, height=150):
+    dpg.add_text('Data Counter: ')
+    dpg.add_input_text(tag='COUNTER', readonly=True, default_value=str(5))
+
+def data_count():
+    while(True):
+        dpg.set_value('COUNTER', str(udr.count))
+        time.sleep(1)
 
 
 def pause_graph(sender, data):
@@ -280,7 +298,7 @@ def pause_graph(sender, data):
 #dpg.show_font_manager()
 
 dpg.create_context()
-dpg.create_viewport(title='TCS App', width=1000, height=600)
+dpg.create_viewport(title='TCS App', width=1600, height=1000)
 dpg.setup_dearpygui()
 dpg.show_viewport()
 
@@ -289,9 +307,10 @@ dpg.set_global_font_scale(1.0)
 
 #list of threads
 thread1 = threading.Thread(target=update_all)
-thread2 = threading.Thread(target=refresh_check)
+thread2 = threading.Thread(target=data_count)
+#thread3 = threading.Thread(target=refresh_check)
 thread1.start()
-#thread2.start()
+thread2.start()
 #thread3.start()
 
 dpg.start_dearpygui()
