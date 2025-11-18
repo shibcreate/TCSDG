@@ -20,6 +20,7 @@
 #include "driver/twai.h"
 #include <dht.h>
 #include <icm42670.h>
+#include "esp_sntp.h"
 
 #include <rgb_ledc_controller.h>
 
@@ -149,6 +150,9 @@ void canTask(void* arg);
 void icm42670_wom_test(void *pvParameters);
 void icm42670_test(void *pvParameters);
 
+//RTC
+void initialize_sntp(void);
+
 static const twai_general_config_t g_config =
 	TWAI_GENERAL_CONFIG_DEFAULT(CONFIG_CTX_GPIO, CONFIG_CRX_GPIO, TWAI_MODE_NORMAL);
 
@@ -249,6 +253,7 @@ telemetry_entry_t telemetry_data[TELEM_COUNT] = {
     [TELEM_HUMIDITY] = {"Humidity", 0.0f},
     [TELEM_TEMPERATURE] = {"Temperature", 0.0f},
 };
+
 
 void handleLightSleepState(){
     
@@ -490,10 +495,10 @@ void parseCanMessages(uint32_t msg_id, uint8_t data[8]){
 
 			if (imu_crash_event == 1 && !vcu_can_captured) {
 				crash_record_t vcu_record = {0};
-				vcu_record.g_force = 5.1f;
-				vcu_record.accel[0] = 5.1f;
-				vcu_record.accel[1] = 5.1f;
-				vcu_record.accel[2] = 5.1f;
+				vcu_record.g_force = 6.9f;
+				vcu_record.accel[0] = 6.9f;
+				vcu_record.accel[1] = 6.7f;
+				vcu_record.accel[2] = 6.9f;
 				vcu_record.vcu_can_id = msg_id;
 				vcu_record.vcu_can_dlc = 8;
 				memcpy(vcu_record.vcu_can_data, data, 8);
@@ -714,10 +719,10 @@ void parseCanMessages(uint32_t msg_id, uint8_t data[8]){
 
 			if (imu_crash_event == 1 && !bms_can_captured) {
 				crash_record_t bms_record = {0};
-				bms_record.g_force = 3.7f;
-				bms_record.accel[0] = 1.2f;
+				bms_record.g_force = 6.9f;
+				bms_record.accel[0] = 6.9f;
 				bms_record.accel[1] = -0.8f;
-				bms_record.accel[2] = 0.4f;
+				bms_record.accel[2] = 6.9f;
 				bms_record.bms_can_id = msg_id;
 				bms_record.bms_can_dlc = 8;
 				memcpy(bms_record.bms_can_data, data, 8);
@@ -1140,7 +1145,7 @@ void icm42670_test(void *pvParameters)
 
     int16_t raw_reading;
     uint8_t data_register;
-
+    uint8_t CRASH_THRESHOLD = 18;
     /* select which acceleration or gyro value should be read: */
     // data_register = ICM42670_REG_ACCEL_DATA_X1;
     // data_register = ICM42670_REG_ACCEL_DATA_Y1;
@@ -1156,7 +1161,16 @@ void icm42670_test(void *pvParameters)
 
         ESP_LOGI(TAG, "Raw accelerometer / gyro reading: %d", raw_reading);
 
-        vTaskDelay(pdMS_TO_TICKS(1000));
+        if (raw_reading > CRASH_THRESHOLD) {
+            if (imu_crash_event != 1) {  // prevent repeated writes
+                imu_crash_event = 1; // Mark crash happened
+                vTaskDelay(pdMS_TO_TICKS(1000));
+                printf("I am in IMU deepsleep...\n");
+                handleLightSleepState();
+            }
+        }
+
+        vTaskDelay(pdMS_TO_TICKS(250));
     }
 }
 
