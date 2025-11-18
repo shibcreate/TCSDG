@@ -20,6 +20,7 @@
 #include "driver/twai.h"
 #include <dht.h>
 #include <icm42670.h>
+#include <time.h>
 
 #include <rgb_ledc_controller.h>
 
@@ -46,6 +47,17 @@ static const char *TAG_RGB = "rainbow_flash";
 #define YELLOW  0xFFFF00
 
 rgb_led_t led1;
+
+//RTC
+static time_t start_time = 1700286000; // Update as needed
+
+// Function to get relative time since start_time in seconds
+time_t get_relative_time() {
+    int64_t usec = esp_timer_get_time();
+    time_t elapsed_sec = usec / 1000000;
+    return start_time + elapsed_sec;
+}
+
 
 //CRASH STUFF
 typedef struct {
@@ -251,6 +263,19 @@ telemetry_entry_t telemetry_data[TELEM_COUNT] = {
     [TELEM_TEMPERATURE] = {"Temperature", 0.0f},
 };
 
+void print_crash_timestamp() {
+    time_t curr_time = get_relative_time();
+    struct tm timeinfo;
+    localtime_r(&curr_time, &timeinfo);
+
+    ESP_LOGI(TAG, "Crash detected at relative time: %04d-%02d-%02d %02d:%02d:%02d",
+        timeinfo.tm_year + 1900,
+        timeinfo.tm_mon + 1,
+        timeinfo.tm_mday,
+        timeinfo.tm_hour,
+        timeinfo.tm_min,
+        timeinfo.tm_sec);
+}
 
 void handleLightSleepState(){
     
@@ -1048,6 +1073,9 @@ void app_main(void)
     }
     ESP_ERROR_CHECK(ret);
 
+    ESP_LOGI(TAG, "System starting, init start_time");
+    start_time = 1700286000;
+
 	handle_crash_event();   
     init_telemetry_data();
 
@@ -1162,6 +1190,7 @@ void icm42670_test(void *pvParameters)
             if (imu_crash_event != 1) {  // prevent repeated writes
                 imu_crash_event = 1; // Mark crash happened
                 vTaskDelay(pdMS_TO_TICKS(1000));
+                print_crash_timestamp();
                 printf("I am in IMU deepsleep...\n");
                 handleLightSleepState();
             }
