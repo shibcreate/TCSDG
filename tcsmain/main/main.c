@@ -20,7 +20,6 @@
 #include "driver/twai.h"
 #include <dht.h>
 #include <icm42670.h>
-#include "esp_sntp.h"
 
 #include <rgb_ledc_controller.h>
 
@@ -150,8 +149,6 @@ void canTask(void* arg);
 void icm42670_wom_test(void *pvParameters);
 void icm42670_test(void *pvParameters);
 
-//RTC
-void initialize_sntp(void);
 
 static const twai_general_config_t g_config =
 	TWAI_GENERAL_CONFIG_DEFAULT(CONFIG_CTX_GPIO, CONFIG_CRX_GPIO, TWAI_MODE_NORMAL);
