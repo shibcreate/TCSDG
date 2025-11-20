@@ -190,7 +190,7 @@ void stateManagerTask(void* parameter){
             break;
         }
 
-        vTaskDelay(1000 / portTICK_PERIOD_MS);
+        //vTaskDelay(1000 / portTICK_PERIOD_MS);
     }
 }
 
@@ -295,7 +295,7 @@ void canReceive() {
 		count = 0;
         if (rx_msg.extd == 0 && rx_msg.rtr == 0) {
             parseCanMessages(rx_msg.identifier, rx_msg.data);
-            vTaskDelay(pdMS_TO_TICKS(10));
+            //vTaskDelay(pdMS_TO_TICKS(10));
         } else {
             printf("Ignored message: extended=%d, rtr=%d\n", rx_msg.extd, rx_msg.rtr);
         }
@@ -517,10 +517,10 @@ void parseCanMessages(uint32_t msg_id, uint8_t data[8]){
 
 			if (imu_crash_event == 1 && !vcu_can_captured) {
 				crash_record_t vcu_record = {0};
-				vcu_record.g_force = 6.9f;
-				vcu_record.accel[0] = 6.9f;
+				vcu_record.g_force = 6.6f;
+				vcu_record.accel[0] = 6.6f;
 				vcu_record.accel[1] = 6.7f;
-				vcu_record.accel[2] = 6.9f;
+				vcu_record.accel[2] = 6.6f;
 				vcu_record.vcu_can_id = msg_id;
 				vcu_record.vcu_can_dlc = 8;
 				memcpy(vcu_record.vcu_can_data, data, 8);
@@ -741,10 +741,10 @@ void parseCanMessages(uint32_t msg_id, uint8_t data[8]){
 
 			if (imu_crash_event == 1 && !bms_can_captured) {
 				crash_record_t bms_record = {0};
-				bms_record.g_force = 6.9f;
-				bms_record.accel[0] = 6.9f;
-				bms_record.accel[1] = -0.8f;
-				bms_record.accel[2] = 6.9f;
+				bms_record.g_force = 6.6f;
+				bms_record.accel[0] = 6.6f;
+				bms_record.accel[1] = -0.6f;
+				bms_record.accel[2] = 6.6f;
 				bms_record.bms_can_id = msg_id;
 				bms_record.bms_can_dlc = 8;
 				memcpy(bms_record.bms_can_data, data, 8);
@@ -1196,7 +1196,7 @@ void icm42670_test(void *pvParameters)
             }
         }
 
-        vTaskDelay(pdMS_TO_TICKS(250));
+        //vTaskDelay(pdMS_TO_TICKS(250));
     }
 }
 
