@@ -4,9 +4,6 @@ import uart_data_read as udr
 import time
 import threading
 
-#INIT FOR DATA GRAPHS
-nsamples = 5
-DATA_INIT = [0.0]*nsamples
 
 #FULL DATA NAMES FOR TAGS
 data_str = ['EMeter_Current', 'EMeter_Voltage', 'MCM_Motor_Speed', 'MCM_DCBus_Current', 
@@ -26,57 +23,60 @@ data_str = ['EMeter_Current', 'EMeter_Voltage', 'MCM_Motor_Speed', 'MCM_DCBus_Cu
             'Pack_Voltage', 'BMS_State_Of_Charge', 'BMS_Highest_Cell_Temperature',
             'Humidity', 'Temperature']
 
+
+#INIT FOR DATA GRAPHS
+nsamples = 50
 DATA_LEN = len(data_str)
-time_x=DATA_INIT
+time_x=[0.0]*nsamples
 data_arrays = []
 
 #LIST OF DATA
-em_curr = DATA_INIT
-em_volt = DATA_INIT
-motor_speed = DATA_INIT
-bus_curr = DATA_INIT
-bus_volt = DATA_INIT
-inv_en_state = DATA_INIT
-inv_state = DATA_INIT
-torq_feed = DATA_INIT
-cmded_torque = DATA_INIT
-torq_cmd = DATA_INIT
-speed_cmd = DATA_INIT
-speed_mode_en = DATA_INIT
-throttle_perc = DATA_INIT
-brake_perc = DATA_INIT
-vcu_fl = DATA_INIT
-vcu_fr = DATA_INIT
-vcu_rl = DATA_INIT
-vcu_rr = DATA_INIT
-term_sense_lost = DATA_INIT
-batt_low_volt = DATA_INIT
-regen_mode = DATA_INIT
-regen_max_torq = DATA_INIT
-speed_kph = DATA_INIT
-steer_angle = DATA_INIT
-high_cell_temp = DATA_INIT
-high_cell_volt = DATA_INIT
-low_cell_volt = DATA_INIT
-high_cell_temp_dc = DATA_INIT
-PL_total_err = DATA_INIT
-PL_prop = DATA_INIT
-PL_integral = DATA_INIT
-PL_torq_cmd = DATA_INIT
-LC_torq_cmd = DATA_INIT
-LC_slip = DATA_INIT
-LC_pid = DATA_INIT
-LC_prop = DATA_INIT
-LC_integral = DATA_INIT
-LC_total_err = DATA_INIT
-BMS_state = DATA_INIT
-BMS_main_pos = DATA_INIT
-BMS_main_neg = DATA_INIT
-pack_volt = DATA_INIT
-BMS_charge = DATA_INIT
-BMS_high_temp = DATA_INIT
-humidity = DATA_INIT
-temp = DATA_INIT
+em_curr = [0.0]*nsamples
+em_volt = [0.0]*nsamples
+motor_speed = [0.0]*nsamples
+bus_curr = [0.0]*nsamples
+bus_volt = [0.0]*nsamples
+inv_en_state = [0.0]*nsamples
+inv_state = [0.0]*nsamples
+torq_feed = [0.0]*nsamples
+cmded_torque = [0.0]*nsamples
+torq_cmd = [0.0]*nsamples
+speed_cmd = [0.0]*nsamples
+speed_mode_en = [0.0]*nsamples
+throttle_perc = [0.0]*nsamples
+brake_perc = [0.0]*nsamples
+vcu_fl = [0.0]*nsamples
+vcu_fr = [0.0]*nsamples
+vcu_rl = [0.0]*nsamples
+vcu_rr = [0.0]*nsamples
+term_sense_lost = [0.0]*nsamples
+batt_low_volt = [0.0]*nsamples
+regen_mode = [0.0]*nsamples
+regen_max_torq = [0.0]*nsamples
+speed_kph = [0.0]*nsamples
+steer_angle = [0.0]*nsamples
+high_cell_temp = [0.0]*nsamples
+high_cell_volt = [0.0]*nsamples
+low_cell_volt = [0.0]*nsamples
+high_cell_temp_dc = [0.0]*nsamples
+PL_total_err = [0.0]*nsamples
+PL_prop = [0.0]*nsamples
+PL_integral = [0.0]*nsamples
+PL_torq_cmd = [0.0]*nsamples
+LC_torq_cmd = [0.0]*nsamples
+LC_slip = [0.0]*nsamples
+LC_pid = [0.0]*nsamples
+LC_prop = [0.0]*nsamples
+LC_integral = [0.0]*nsamples
+LC_total_err = [0.0]*nsamples
+BMS_state = [0.0]*nsamples
+BMS_main_pos = [0.0]*nsamples
+BMS_main_neg = [0.0]*nsamples
+pack_volt = [0.0]*nsamples
+BMS_charge = [0.0]*nsamples
+BMS_high_temp = [0.0]*nsamples
+humidity = [0.0]*nsamples
+temp = [0.0]*nsamples
 
 data_arrays.append(em_curr) #0
 data_arrays.append(em_volt) #1
@@ -173,27 +173,78 @@ WARN_COLOR = (255, 255, 0) #yellow
 DANGER_COLOR = (255, 165, 0) #orange
 FAULT_COLOR = (255, 0, 0) #red
 
+
 #MAIN THREAD
 def update_all():
+    global data_arrays
     t_u = time.time()
     while True:
-        for i in range(DATA_LEN):
+        for i in range(20):
             udr.update_data()
+            # data_arrays[i] = udr.data_arrays[i]
         
         time_x.append(time.time() - t_u) #update time x axis
+        em_curr.append(udr.em_curr[-1])
+        em_volt.append(udr.em_volt[-1])
+        motor_speed.append(udr.motor_speed[-1])
+        bus_curr.append(udr.bus_curr[-1])
+        bus_volt.append(udr.bus_volt[-1])
+        inv_en_state.append(udr.inv_en_state[-1])
+        inv_state.append(udr.inv_state[-1])
+        torq_feed.append(udr.torq_feed[-1])
+        cmded_torque.append(udr.cmded_torque[-1])
+        torq_cmd.append(udr.torq_cmd[-1])
+        speed_cmd.append(udr.speed_cmd[-1])
+        speed_mode_en.append(udr.speed_mode_en[-1])
+        throttle_perc.append(udr.throttle_perc[-1])
+        brake_perc.append(udr.brake_perc[-1])
+        vcu_fl.append(udr.vcu_fl[-1])
+        vcu_fr.append(udr.vcu_fr[-1])
+        vcu_rl.append(udr.vcu_rl[-1])
+        vcu_rr.append(udr.vcu_rr[-1])
+        term_sense_lost.append(udr.term_sense_lost[-1])
+        batt_low_volt.append(udr.batt_low_volt[-1])
+        regen_mode.append(udr.regen_mode[-1])
+        regen_max_torq.append(udr.regen_max_torq[-1])
+        speed_kph.append(udr.speed_kph[-1])
+        steer_angle.append(udr.steer_angle[-1])
+        high_cell_temp.append(udr.high_cell_temp[-1])
+        high_cell_volt.append(udr.high_cell_volt[-1])
+        low_cell_volt.append(udr.low_cell_volt[-1])
+        high_cell_temp_dc.append(udr.high_cell_temp_dc[-1])
+        PL_total_err.append(udr.PL_total_err[-1])
+        PL_prop.append(udr.PL_prop[-1])
+        PL_integral.append(udr.PL_integral[-1])
+        PL_torq_cmd.append(udr.PL_torq_cmd[-1])
+        LC_torq_cmd.append(udr.LC_torq_cmd[-1])
+        LC_slip.append(udr.LC_slip[-1])
+        LC_pid.append(udr.LC_pid[-1])
+        LC_prop.append(udr.LC_prop[-1])
+        LC_integral.append(udr.LC_integral[-1])
+        LC_total_err.append(udr.LC_total_err[-1])
+        BMS_state.append(udr.BMS_state[-1])
+        BMS_main_pos.append(udr.BMS_main_pos[-1])
+        BMS_main_neg.append(udr.BMS_main_neg[-1])
+        pack_volt.append(udr.pack_volt[-1])
+        BMS_charge.append(udr.BMS_charge[-1])
+        BMS_high_temp.append(udr.BMS_high_temp[-1])
+        humidity.append(udr.humidity[-1])
+        temp.append(udr.temp[-1])
+
         for i in range(DATA_LEN):
-            data_arrays[i].append(udr.data_arrays[i][-1])
-            dpg.set_value(data_str[i], [list(time_x), list(data_arrays[i])]) #set series x and y to last nsamples
+            dpg.set_value(data_str[i], [list(time_x), list(data_arrays[i])])
+            dpg.fit_axis_data(f'x_axis{i+1}')
+            dpg.fit_axis_data(f'y_axis{i+1}')
 
         #threshold checks
-        if (data_arrays[41][-1] < thresholds[0] and data_arrays[41][-1] > thresholds[1]):
-            thresh_check("pack voltage", data_arrays[41][-1], time_x[-1], 0)
-        if (data_arrays[41][-1] < thresholds[1]):
-            thresh_check("pack voltage", data_arrays[41][-1], time_x[-1], 1)
-        if (data_arrays[8][-1] >= thresholds[2]):
-            thresh_check("commanded torque", data_arrays[8][-1], time_x[-1], 1)      
-        if (data_arrays[12][-1] <= thresholds[3]):
-            thresh_check("throttle percent", data_arrays[12][-1], time_x[-1], 1)
+        if (pack_volt[-1] < thresholds[0] and pack_volt[-1] > thresholds[1]):
+            thresh_check("pack voltage", pack_volt[-1], time_x[-1], 0)
+        if (pack_volt[-1] < thresholds[1]):
+            thresh_check("pack voltage", pack_volt[-1], time_x[-1], 1)
+        if (cmded_torque[-1] >= thresholds[2]):
+            thresh_check("commanded torque", cmded_torque[-1], time_x[-1], 1)      
+        if (throttle_perc[-1] <= thresholds[3]):
+            thresh_check("throttle percent", throttle_perc[-1], time_x[-1], 1)
 
         #error check
         faults = udr.faults
@@ -206,19 +257,15 @@ def update_all():
                 udr.faults[i] = 0
 
         #power calculations: dc_bus_current * dc_voltage
-        power_calc(data_arrays[3][-1], data_arrays[4][-1])
+        power_calc(bus_curr[-1], bus_volt[-1])
 
-        #fit axes
-        for i in range(DATA_LEN):
-            dpg.fit_axis_data(f'x_axis{i+1}')
-            dpg.fit_axis_data(f'y_axis{i+1}')
 
 dpg.create_context()
 
 
 #GRAPHS WINDOWS
 def create_plot(plot_label, pos_coord, xtag, ylabel, ytag, ylist, line_tag):
-    with dpg.plot(label=plot_label, pos=pos_coord, height=GRAPH_HEIGHT, width=GRAPH_WIDTH):
+    with dpg.plot(label=plot_label, pos=pos_coord, height=GRAPH_HEIGHT, width=GRAPH_WIDTH, crosshairs=True):
         #create x and y axes, set to auto scale
         x_axis = dpg.add_plot_axis(dpg.mvXAxis, label='Time (s)', tag=xtag)
         y_axis = dpg.add_plot_axis(dpg.mvYAxis, label=ylabel, tag=ytag)
@@ -228,60 +275,60 @@ def create_plot(plot_label, pos_coord, xtag, ylabel, ytag, ylist, line_tag):
 with dpg.window(label='GRAPHS', tag='win', width=1000, height = 800, no_scroll_with_mouse=False):
     with dpg.tab_bar(label='tab_bar', reorderable=True):
         with dpg.tab(label='MCM', tracked=True):
-            create_plot(data_str[0], (GRAPH_POS_XL, GRAPH_POS_Y), 'x_axis1', 'current', 'y_axis1', data_arrays[0], data_str[0])
-            create_plot(data_str[1], (GRAPH_POS_XR, GRAPH_POS_Y), 'x_axis2', 'volt', 'y_axis2', data_arrays[1], data_str[1])
-            create_plot(data_str[2], (GRAPH_POS_XL, GRAPH_POS_Y+(GRAPH_HEIGHT*1)), 'x_axis3', 'speed', 'y_axis3', data_arrays[2], data_str[2])
-            create_plot(data_str[3], (GRAPH_POS_XR, GRAPH_POS_Y+(GRAPH_HEIGHT*1)), 'x_axis4', 'current', 'y_axis4', data_arrays[3], data_str[3])
-            create_plot(data_str[4], (GRAPH_POS_XL, GRAPH_POS_Y+(GRAPH_HEIGHT*2)), 'x_axis5', 'volt', 'y_axis5', data_arrays[4], data_str[4])
-            create_plot(data_str[5], (GRAPH_POS_XR, GRAPH_POS_Y+(GRAPH_HEIGHT*2)), 'x_axis6', 'en_state', 'y_axis6', data_arrays[5], data_str[5])
-            create_plot(data_str[6], (GRAPH_POS_XL, GRAPH_POS_Y+(GRAPH_HEIGHT*3)), 'x_axis7', 'state', 'y_axis7', data_arrays[6], data_str[6])
-            create_plot(data_str[7], (GRAPH_POS_XR, GRAPH_POS_Y+(GRAPH_HEIGHT*3)), 'x_axis8', 'feedback', 'y_axis8', data_arrays[7], data_str[7])
-            create_plot(data_str[8], (GRAPH_POS_XL, GRAPH_POS_Y+(GRAPH_HEIGHT*4)), 'x_axis9', 'torque', 'y_axis9', data_arrays[8], data_str[8])
-            create_plot(data_str[9], (GRAPH_POS_XR, GRAPH_POS_Y+(GRAPH_HEIGHT*4)), 'x_axis10', 'torque_cmd', 'y_axis10', data_arrays[9], data_str[9])
-            create_plot(data_str[10], (GRAPH_POS_XL, GRAPH_POS_Y+(GRAPH_HEIGHT*5)), 'x_axis11', 'speed_cmd', 'y_axis11', data_arrays[10], data_str[10])
-            create_plot(data_str[11], (GRAPH_POS_XR, GRAPH_POS_Y+(GRAPH_HEIGHT*5)), 'x_axis12', 'mode_en', 'y_axis12', data_arrays[11], data_str[11])
+            create_plot(data_str[0], (GRAPH_POS_XL, GRAPH_POS_Y), 'x_axis1', 'current', 'y_axis1', em_curr, data_str[0])
+            create_plot(data_str[1], (GRAPH_POS_XR, GRAPH_POS_Y), 'x_axis2', 'volt', 'y_axis2', em_volt, data_str[1])
+            create_plot(data_str[2], (GRAPH_POS_XL, GRAPH_POS_Y+(GRAPH_HEIGHT*1)), 'x_axis3', 'speed', 'y_axis3', motor_speed, data_str[2])
+            create_plot(data_str[3], (GRAPH_POS_XR, GRAPH_POS_Y+(GRAPH_HEIGHT*1)), 'x_axis4', 'current', 'y_axis4', bus_curr, data_str[3])
+            create_plot(data_str[4], (GRAPH_POS_XL, GRAPH_POS_Y+(GRAPH_HEIGHT*2)), 'x_axis5', 'volt', 'y_axis5', bus_volt, data_str[4])
+            create_plot(data_str[5], (GRAPH_POS_XR, GRAPH_POS_Y+(GRAPH_HEIGHT*2)), 'x_axis6', 'en_state', 'y_axis6', inv_en_state, data_str[5])
+            create_plot(data_str[6], (GRAPH_POS_XL, GRAPH_POS_Y+(GRAPH_HEIGHT*3)), 'x_axis7', 'state', 'y_axis7', inv_state, data_str[6])
+            create_plot(data_str[7], (GRAPH_POS_XR, GRAPH_POS_Y+(GRAPH_HEIGHT*3)), 'x_axis8', 'feedback', 'y_axis8', torq_feed, data_str[7])
+            create_plot(data_str[8], (GRAPH_POS_XL, GRAPH_POS_Y+(GRAPH_HEIGHT*4)), 'x_axis9', 'torque', 'y_axis9', cmded_torque, data_str[8])
+            create_plot(data_str[9], (GRAPH_POS_XR, GRAPH_POS_Y+(GRAPH_HEIGHT*4)), 'x_axis10', 'torque_cmd', 'y_axis10', torq_cmd, data_str[9])
+            create_plot(data_str[10], (GRAPH_POS_XL, GRAPH_POS_Y+(GRAPH_HEIGHT*5)), 'x_axis11', 'speed_cmd', 'y_axis11', speed_cmd, data_str[10])
+            create_plot(data_str[11], (GRAPH_POS_XR, GRAPH_POS_Y+(GRAPH_HEIGHT*5)), 'x_axis12', 'mode_en', 'y_axis12', speed_mode_en, data_str[11])
             
         with dpg.tab(label='VCU WSS/MCM', tracked=True):
-            create_plot(data_str[12], (GRAPH_POS_XL, GRAPH_POS_Y), 'x_axis13', 'percent', 'y_axis13', data_arrays[12], data_str[12])
-            create_plot(data_str[13], (GRAPH_POS_XR, GRAPH_POS_Y), 'x_axis14', 'percent', 'y_axis14', data_arrays[13], data_str[13])
-            create_plot(data_str[14], (GRAPH_POS_XL, GRAPH_POS_Y+(GRAPH_HEIGHT*1)), 'x_axis15', 'FL_S', 'y_axis15', data_arrays[14], data_str[14])
-            create_plot(data_str[15], (GRAPH_POS_XR, GRAPH_POS_Y+(GRAPH_HEIGHT*1)), 'x_axis16', 'FL_S', 'y_axis16', data_arrays[15], data_str[15])
-            create_plot(data_str[16], (GRAPH_POS_XL, GRAPH_POS_Y+(GRAPH_HEIGHT*2)), 'x_axis17', 'FL_S', 'y_axis17', data_arrays[16], data_str[16])
-            create_plot(data_str[17], (GRAPH_POS_XR, GRAPH_POS_Y+(GRAPH_HEIGHT*2)), 'x_axis18', 'FL_S', 'y_axis18', data_arrays[17], data_str[17])
-            create_plot(data_str[18], (GRAPH_POS_XL, GRAPH_POS_Y+(GRAPH_HEIGHT*3)), 'x_axis19', 'Sense_Lost', 'y_axis19', data_arrays[18], data_str[18])
-            create_plot(data_str[19], (GRAPH_POS_XR, GRAPH_POS_Y+(GRAPH_HEIGHT*3)), 'x_axis20', 'volt', 'y_axis20', data_arrays[19], data_str[19])
-            create_plot(data_str[20], (GRAPH_POS_XL, GRAPH_POS_Y+(GRAPH_HEIGHT*4)), 'x_axis21', 'regen_mode', 'y_axis21', data_arrays[20], data_str[20])
-            create_plot(data_str[21], (GRAPH_POS_XR, GRAPH_POS_Y+(GRAPH_HEIGHT*4)), 'x_axis22', 'max_torque', 'y_axis22', data_arrays[21], data_str[21])
+            create_plot(data_str[12], (GRAPH_POS_XL, GRAPH_POS_Y), 'x_axis13', 'percent', 'y_axis13', throttle_perc, data_str[12])
+            create_plot(data_str[13], (GRAPH_POS_XR, GRAPH_POS_Y), 'x_axis14', 'percent', 'y_axis14', brake_perc, data_str[13])
+            create_plot(data_str[14], (GRAPH_POS_XL, GRAPH_POS_Y+(GRAPH_HEIGHT*1)), 'x_axis15', 'FL_S', 'y_axis15', vcu_fl, data_str[14])
+            create_plot(data_str[15], (GRAPH_POS_XR, GRAPH_POS_Y+(GRAPH_HEIGHT*1)), 'x_axis16', 'FL_S', 'y_axis16', vcu_fr, data_str[15])
+            create_plot(data_str[16], (GRAPH_POS_XL, GRAPH_POS_Y+(GRAPH_HEIGHT*2)), 'x_axis17', 'FL_S', 'y_axis17', vcu_rl, data_str[16])
+            create_plot(data_str[17], (GRAPH_POS_XR, GRAPH_POS_Y+(GRAPH_HEIGHT*2)), 'x_axis18', 'FL_S', 'y_axis18', vcu_rr, data_str[17])
+            create_plot(data_str[18], (GRAPH_POS_XL, GRAPH_POS_Y+(GRAPH_HEIGHT*3)), 'x_axis19', 'Sense_Lost', 'y_axis19', term_sense_lost, data_str[18])
+            create_plot(data_str[19], (GRAPH_POS_XR, GRAPH_POS_Y+(GRAPH_HEIGHT*3)), 'x_axis20', 'volt', 'y_axis20', batt_low_volt, data_str[19])
+            create_plot(data_str[20], (GRAPH_POS_XL, GRAPH_POS_Y+(GRAPH_HEIGHT*4)), 'x_axis21', 'regen_mode', 'y_axis21', regen_mode, data_str[20])
+            create_plot(data_str[21], (GRAPH_POS_XR, GRAPH_POS_Y+(GRAPH_HEIGHT*4)), 'x_axis22', 'max_torque', 'y_axis22', regen_max_torq, data_str[21])
         
         with dpg.tab(label='VCU BMS', tracked=True):
-            create_plot(data_str[24], (GRAPH_POS_XL, GRAPH_POS_Y), 'x_axis25', 'cell_temp', 'y_axis25', data_arrays[24], data_str[24])
-            create_plot(data_str[25], (GRAPH_POS_XR, GRAPH_POS_Y), 'x_axis26', 'cell_volt', 'y_axis26', data_arrays[25], data_str[25])
-            create_plot(data_str[26], (GRAPH_POS_XL, GRAPH_POS_Y+(GRAPH_HEIGHT*1)), 'x_axis27', 'cell_volt', 'y_axis27', data_arrays[26], data_str[26])
-            create_plot(data_str[27], (GRAPH_POS_XR, GRAPH_POS_Y+(GRAPH_HEIGHT*1)), 'x_axis28', 'temp_dc', 'y_axis28', data_arrays[27], data_str[27])
+            create_plot(data_str[24], (GRAPH_POS_XL, GRAPH_POS_Y), 'x_axis25', 'cell_temp', 'y_axis25', high_cell_temp, data_str[24])
+            create_plot(data_str[25], (GRAPH_POS_XR, GRAPH_POS_Y), 'x_axis26', 'cell_volt', 'y_axis26', high_cell_volt, data_str[25])
+            create_plot(data_str[26], (GRAPH_POS_XL, GRAPH_POS_Y+(GRAPH_HEIGHT*1)), 'x_axis27', 'cell_volt', 'y_axis27', low_cell_volt, data_str[26])
+            create_plot(data_str[27], (GRAPH_POS_XR, GRAPH_POS_Y+(GRAPH_HEIGHT*1)), 'x_axis28', 'temp_dc', 'y_axis28', high_cell_temp_dc, data_str[27])
         
         with dpg.tab(label='VCU Power Limit/Launch Control', tracked=True):
-            create_plot(data_str[28], (GRAPH_POS_XL, GRAPH_POS_Y), 'x_axis29', 'total_error', 'y_axis29', data_arrays[28], data_str[28])
-            create_plot(data_str[29], (GRAPH_POS_XR, GRAPH_POS_Y), 'x_axis30', 'proportional', 'y_axis30', data_arrays[29], data_str[29])
-            create_plot(data_str[30], (GRAPH_POS_XL, GRAPH_POS_Y+(GRAPH_HEIGHT*1)), 'x_axis31', 'integral', 'y_axis31', data_arrays[30], data_str[30])
-            create_plot(data_str[31], (GRAPH_POS_XR, GRAPH_POS_Y+(GRAPH_HEIGHT*1)), 'x_axis32', 'torque_cmd', 'y_axis32', data_arrays[31], data_str[31])
-            create_plot(data_str[32], (GRAPH_POS_XL, GRAPH_POS_Y+(GRAPH_HEIGHT*2)), 'x_axis33', 'torque_cmd', 'y_axis33', data_arrays[32], data_str[32])
-            create_plot(data_str[33], (GRAPH_POS_XR, GRAPH_POS_Y+(GRAPH_HEIGHT*2)), 'x_axis34', 'slip_ratio', 'y_axis34', data_arrays[33], data_str[33])
-            create_plot(data_str[34], (GRAPH_POS_XL, GRAPH_POS_Y+(GRAPH_HEIGHT*3)), 'x_axis35', 'PID_output', 'y_axis35', data_arrays[34], data_str[34])
-            create_plot(data_str[35], (GRAPH_POS_XR, GRAPH_POS_Y+(GRAPH_HEIGHT*3)), 'x_axis36', 'proportional', 'y_axis36', data_arrays[35], data_str[35])
-            create_plot(data_str[36], (GRAPH_POS_XL, GRAPH_POS_Y+(GRAPH_HEIGHT*4)), 'x_axis37', 'integral', 'y_axis37', data_arrays[36], data_str[36])
-            create_plot(data_str[37], (GRAPH_POS_XR, GRAPH_POS_Y+(GRAPH_HEIGHT*4)), 'x_axis38', 'total_error', 'y_axis38', data_arrays[37], data_str[37])
+            create_plot(data_str[28], (GRAPH_POS_XL, GRAPH_POS_Y), 'x_axis29', 'total_error', 'y_axis29', PL_total_err, data_str[28])
+            create_plot(data_str[29], (GRAPH_POS_XR, GRAPH_POS_Y), 'x_axis30', 'proportional', 'y_axis30', PL_prop, data_str[29])
+            create_plot(data_str[30], (GRAPH_POS_XL, GRAPH_POS_Y+(GRAPH_HEIGHT*1)), 'x_axis31', 'integral', 'y_axis31', PL_integral, data_str[30])
+            create_plot(data_str[31], (GRAPH_POS_XR, GRAPH_POS_Y+(GRAPH_HEIGHT*1)), 'x_axis32', 'torque_cmd', 'y_axis32', PL_torq_cmd, data_str[31])
+            create_plot(data_str[32], (GRAPH_POS_XL, GRAPH_POS_Y+(GRAPH_HEIGHT*2)), 'x_axis33', 'torque_cmd', 'y_axis33', LC_torq_cmd, data_str[32])
+            create_plot(data_str[33], (GRAPH_POS_XR, GRAPH_POS_Y+(GRAPH_HEIGHT*2)), 'x_axis34', 'slip_ratio', 'y_axis34', LC_slip, data_str[33])
+            create_plot(data_str[34], (GRAPH_POS_XL, GRAPH_POS_Y+(GRAPH_HEIGHT*3)), 'x_axis35', 'PID_output', 'y_axis35', LC_pid, data_str[34])
+            create_plot(data_str[35], (GRAPH_POS_XR, GRAPH_POS_Y+(GRAPH_HEIGHT*3)), 'x_axis36', 'proportional', 'y_axis36', LC_prop, data_str[35])
+            create_plot(data_str[36], (GRAPH_POS_XL, GRAPH_POS_Y+(GRAPH_HEIGHT*4)), 'x_axis37', 'integral', 'y_axis37', LC_integral, data_str[36])
+            create_plot(data_str[37], (GRAPH_POS_XR, GRAPH_POS_Y+(GRAPH_HEIGHT*4)), 'x_axis38', 'total_error', 'y_axis38', LC_total_err, data_str[37])
 
         with dpg.tab(label='BMS/Misc', tracked=True):
-            create_plot(data_str[38], (GRAPH_POS_XL, GRAPH_POS_Y), 'x_axis39', 'current_state', 'y_axis39', data_arrays[38], data_str[38])
-            create_plot(data_str[39], (GRAPH_POS_XR, GRAPH_POS_Y), 'x_axis40', 'pos_closed', 'y_axis40', data_arrays[39], data_str[39])
-            create_plot(data_str[40], (GRAPH_POS_XL, GRAPH_POS_Y+(GRAPH_HEIGHT*1)), 'x_axis41', 'neg_closed', 'y_axis41', data_arrays[40], data_str[40])
-            create_plot(data_str[41], (GRAPH_POS_XR, GRAPH_POS_Y+(GRAPH_HEIGHT*1)), 'x_axis42', 'pack_volt', 'y_axis42', data_arrays[41], data_str[41])
-            create_plot(data_str[42], (GRAPH_POS_XL, GRAPH_POS_Y+(GRAPH_HEIGHT*2)), 'x_axis43', 'state_of_charge', 'y_axis43', data_arrays[42], data_str[42])
-            create_plot(data_str[43], (GRAPH_POS_XR, GRAPH_POS_Y+(GRAPH_HEIGHT*2)), 'x_axis44', 'cell_temp', 'y_axis44', data_arrays[43], data_str[43])
-            create_plot(data_str[44], (GRAPH_POS_XL, GRAPH_POS_Y+(GRAPH_HEIGHT*3)), 'x_axis45', 'humidity', 'y_axis45', data_arrays[44], data_str[44])
-            create_plot(data_str[45], (GRAPH_POS_XR, GRAPH_POS_Y+(GRAPH_HEIGHT*3)), 'x_axis46', 'temp', 'y_axis46', data_arrays[45], data_str[45])
-            create_plot(data_str[22], (GRAPH_POS_XL, GRAPH_POS_Y+(GRAPH_HEIGHT*4)), 'x_axis23', 'speed_kph', 'y_axis23', data_arrays[22], data_str[22])
-            create_plot(data_str[23], (GRAPH_POS_XR, GRAPH_POS_Y+(GRAPH_HEIGHT*4)), 'x_axis24', 'angle', 'y_axis24', data_arrays[23], data_str[23])
+            create_plot(data_str[38], (GRAPH_POS_XL, GRAPH_POS_Y), 'x_axis39', 'current_state', 'y_axis39', BMS_state, data_str[38])
+            create_plot(data_str[39], (GRAPH_POS_XR, GRAPH_POS_Y), 'x_axis40', 'pos_closed', 'y_axis40', BMS_main_pos, data_str[39])
+            create_plot(data_str[40], (GRAPH_POS_XL, GRAPH_POS_Y+(GRAPH_HEIGHT*1)), 'x_axis41', 'neg_closed', 'y_axis41', BMS_main_neg, data_str[40])
+            create_plot(data_str[41], (GRAPH_POS_XR, GRAPH_POS_Y+(GRAPH_HEIGHT*1)), 'x_axis42', 'pack_volt', 'y_axis42', pack_volt, data_str[41])
+            create_plot(data_str[42], (GRAPH_POS_XL, GRAPH_POS_Y+(GRAPH_HEIGHT*2)), 'x_axis43', 'state_of_charge', 'y_axis43', BMS_charge, data_str[42])
+            create_plot(data_str[43], (GRAPH_POS_XR, GRAPH_POS_Y+(GRAPH_HEIGHT*2)), 'x_axis44', 'cell_temp', 'y_axis44', BMS_high_temp, data_str[43])
+            create_plot(data_str[44], (GRAPH_POS_XL, GRAPH_POS_Y+(GRAPH_HEIGHT*3)), 'x_axis45', 'humidity', 'y_axis45', humidity, data_str[44])
+            create_plot(data_str[45], (GRAPH_POS_XR, GRAPH_POS_Y+(GRAPH_HEIGHT*3)), 'x_axis46', 'temp', 'y_axis46', temp, data_str[45])
+            create_plot(data_str[22], (GRAPH_POS_XL, GRAPH_POS_Y+(GRAPH_HEIGHT*4)), 'x_axis23', 'speed_kph', 'y_axis23', speed_kph, data_str[22])
+            create_plot(data_str[23], (GRAPH_POS_XR, GRAPH_POS_Y+(GRAPH_HEIGHT*4)), 'x_axis24', 'angle', 'y_axis24', steer_angle, data_str[23])
 
 
 #BUTTONS STUFF
@@ -312,7 +359,7 @@ with dpg.window(label='Data Counter', pos=(1260, 20), width=250, height=250):
 def data_count():
     while(True):
         dpg.set_value('COUNTER', str(udr.count))
-        time.sleep(1.3)
+        time.sleep(1.5)
 
 
 #WARNING/ERROR LOG STUFF
@@ -334,7 +381,7 @@ def thresh_check(data_type, value, time, type):
 
 def power_calc(current, volt):
     power = current * volt
-    msg = f"CURRENT POWER: {power}"
+    msg = f"CURRENT POWER: {power:.3f}"
     dpg.add_text(msg, parent='log_container')
     dpg.set_y_scroll('log_container', 9999) #auto scroll function
 
@@ -353,6 +400,8 @@ thread1 = threading.Thread(target=update_all)
 thread2 = threading.Thread(target=data_count)
 thread1.start()
 thread2.start()
+# thread3 = threading.Thread(target=udr.update_data())
+# thread3.start()
 
 dpg.start_dearpygui()
 
