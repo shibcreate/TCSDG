@@ -21,18 +21,20 @@
 #include <dht.h>
 #include <icm42670.h>
 #include <time.h>
-
+//new refactored .h
 #include <rgb_ledc_controller.h>
+#include "humidity.h"
+#include "telemetry.h"
 
 #define BUTTON_PIN 1
 #define BUF_SIZE 128
 
 //humidity sensor
 // Hardcoded sensor type
-#define SENSOR_TYPE DHT_TYPE_AM2301
+//#define SENSOR_TYPE DHT_TYPE_AM2301
 
 // Hardcoded GPIO pin for the data line
-#define DHT_GPIO 45  // Change to your GPIO pin
+//#define DHT_GPIO 45  // Change to your GPIO pin
 
 static const char *TAG_RGB = "rainbow_flash";
 
@@ -146,13 +148,13 @@ void bms_erase_crash_record();
 void handle_crash_event();
 
 //DATA STUFF
-void init_telemetry_data(void);
-void update_telemetry_value_by_name(const char* name, float value);
-float get_telemetry_value_by_name(const char* name);
-void print_all_telemetry(void);
+//void init_telemetry_data(void);
+//void update_telemetry_value_by_name(const char* name, float value);
+//float get_telemetry_value_by_name(const char* name);
+//void print_all_telemetry(void);
 
 //Humidity
-void dht_test(void *pvParameters);
+//void dht_test(void *pvParameters);
 
 //CAN TASK
 void canTask(void* arg);
@@ -201,67 +203,67 @@ void handle_lora_can_command(void);
 
 // Managing Data
 // Initialize the 2D telemetry data array
-telemetry_entry_t telemetry_data[TELEM_COUNT] = {
-    [TELEM_EMETER_CURRENT] = {"EMeter_Current", 0.0f},
-    [TELEM_EMETER_VOLTAGE] = {"EMeter_Voltage", 0.0f},
-    [TELEM_MCM_MOTOR_SPEED] = {"MCM_Motor_Speed", 0.0f},
-    [TELEM_MCM_DC_BUS_CURRENT] = {"MCM_DCBus_Current", 0.0f},
-    [TELEM_MCM_DC_BUS_VOLTAGE] = {"MCM_DCBus_Voltage", 0.0f},
-    [TELEM_MCM_INT_INVERT_ENABLE_STATE] = {"MCM_IntInvert_EnableState", 0.0f},
-    [TELEM_MCM_INT_INVERTER_STATE] = {"MCM_IntInverter_State", 0.0f},
-    [TELEM_MCM_TORQUE_FEEDBACK] = {"MCM_Torque_Feedback", 0.0f},
-    [TELEM_MCM_COMMANDED_TORQUE] = {"MCM_Commanded_Torque", 0.0f},
-    [TELEM_MCM_TORQUE_COMMAND] = {"MCM_Torque_Command", 0.0f},
-    [TELEM_MCM_SPEED_COMMAND] = {"MCM_Speed_Command", 0.0f},
-    [TELEM_MCM_SPEED_MODE_ENABLE] = {"MCM_Speed_Mode_Enable", 0.0f},
-    [TELEM_TPS1_THROTTLE_PERCENT] = {"TPS1_Throttle_Percent", 0.0f},
-    [TELEM_BPS0_BRAKE_PERCENT] = {"BPS0_Brake_Percent", 0.0f},
-    [TELEM_VCU_WSS_FL_S] = {"VCU_WSS_FL_S", 0.0f},
-    [TELEM_VCU_WSS_FR_S] = {"VCU_WSS_FR_S", 0.0f},
-    [TELEM_VCU_WSS_RL_S] = {"VCU_WSS_RL_S", 0.0f},
-    [TELEM_VCU_WSS_RR_S] = {"VCU_WSS_RR_S", 0.0f},
-    [TELEM_VCU_FAULT_TPS_OUTOFRANGE] = {"VCU_Fault_TPS_OutOfRange", 0.0f},
-    [TELEM_VCU_FAULT_BPS_OUTOFRANGE] = {"VCU_Fault_BPS_OutOfRange", 0.0f},
-    [TELEM_VCU_FAULT_TPS_OUTOFSYNC] = {"VCU_FAULT_TPS_OutOfSync", 0.0f},
-    [TELEM_VCU_FAULT_TPSBPS_IMPLAUSIBLE] = {"VCU_FAULT_TPSBPS_Implausible", 0.0f},
-    [TELEM_VCU_FAULT_BSPD_SOFTFAULT] = {"VCU_FAULT_BSPD_SoftFault", 0.0f},
-    [TELEM_VCU_WARNING_LVS_BATTERYLOW] = {"VCU_FAULT_LVS_BatteryLow", 0.0f},
-    [TELEM_VCU_NOTICE_HVIL_TERMSENSELOST] = {"VCU_NOTICE_HVIL_TermSenseLost", 0.0f},
-    [TELEM_BATTERY_LOW_VOLTAGE] = {"Battery_Low_Voltage", 0.0f},
-    [TELEM_VCU_MCM_REGEN_MODE] = {"VCU_MCM_RegenMode", 0.0f},
-    [TELEM_VCU_MCM_REGEN_MAX_TORQUE] = {"VCU_MCM_Regen_MaxTorqueNm", 0.0f},
-    [TELEM_SPEED_KPH] = {"Speed_KPH", 0.0f},
-    [TELEM_STEERING_ANGLE] = {"Steering_Angle", 0.0f},
-    [TELEM_VCU_BMS_HIGHEST_CELL_TEMP] = {"VCU_BMS_HighestCellTemp", 0.0f},
-    [TELEM_VCU_BMS_HIGHEST_CELL_VOLTAGE] = {"VCU_BMS_HighestCellVoltage", 0.0f},
-    [TELEM_VCU_BMS_LOWEST_CELL_VOLTAGE] = {"VCU_BMS_LowestCellVoltage", 0.0f},
-    [TELEM_VCU_BMS_HIGHEST_CELL_TEMP_DC] = {"VCU_BMS_HighestCellTemp_dC", 0.0f},
-    [TELEM_VCU_POWERLIMIT_PID_TOTAL_ERROR] = {"VCU_POWERLIMIT_PID_getTotalError", 0.0f},
-    [TELEM_VCU_POWERLIMIT_PID_PROPORTIONAL] = {"VCU_POWERLIMIT_PID_getProportional", 0.0f},
-    [TELEM_VCU_POWERLIMIT_PID_INTEGRAL] = {"VCU_POWERLIMIT_PID_getIntegral", 0.0f},
-    [TELEM_VCU_POWERLIMIT_TORQUE_COMMAND] = {"VCU_POWERLIMIT_getTorqueCommand_Nm", 0.0f},
-    [TELEM_VCU_LAUNCH_CONTROL_TORQUE_CMD] = {"VCU_LaunchControl_getTorqueCommand_Nm", 0.0f},
-    [TELEM_VCU_LAUNCH_CONTROL_SLIP_RATIO] = {"VCU_LaunchControl_getSlipRatioScaled", 0.0f},
-    [TELEM_VCU_LAUNCH_CONTROL_PID_OUTPUT] = {"VCU_LaunchControl_getPidOutput", 0.0f},
-    [TELEM_VCU_LAUNCH_CONTROL_PID_PROP] = {"VCU_LaunchControl_PID_Proportional", 0.0f},
-    [TELEM_VCU_LAUNCH_CONTROL_PID_INTEGRAL] = {"VCU_LaunchControl_PID_Integral", 0.0f},
-    [TELEM_VCU_LAUNCH_CONTROL_PID_TOTAL_ERROR] = {"VCU_LaunchControl_PID_TotalError", 0.0f},
-    [TELEM_BMS_IMMINENT_CONTACTOR_WARNING] = {"BMS_Imminent_Contactor_Opening_Warning", 0.0f},
-    [TELEM_BMS_CELL_UNDER_VOLTAGE_FAULT] = {"BMS_Cell_Under_Voltage_Fault", 0.0f},
-    [TELEM_BMS_CELL_OVER_TEMP_FAULT] = {"BMS_Cell_Over_Temperature_Fault", 0.0f},
-    [TELEM_BMS_PACK_UNDER_VOLTAGE_FAULT] = {"BMS_Pack_Under_Voltage_Fault", 0.0f},
-    [TELEM_BMS_ISOLATION_LEAKAGE_FAULT] = {"BMS_Isolation_Leakage_Fault", 0.0f},
-    [TELEM_BMS_PRECHARGE_FAULT] = {"BMS_Precharge_Fault", 0.0f},
-    [TELEM_BMS_FAILED_THERMISTOR_FAULT] = {"BMS_Failed_Thermistor_Fault", 0.0f},
-    [TELEM_BMS_CURRENT_STATE] = {"BMS_Current_State", 0.0f},
-    [TELEM_BMS_MAIN_CONTACTOR_POS_CLOSED] = {"BMS_Main_Contactor_Positive_Closed", 0.0f},
-    [TELEM_BMS_MAIN_CONTACTOR_NEG_CLOSED] = {"BMS_Main_Contactor_Negative_Closed", 0.0f},
-    [TELEM_BMS_PACK_VOLTAGE] = {"Pack_Voltage", 0.0f},
-    [TELEM_BMS_STATE_OF_CHARGE] = {"BMS_State_Of_Charge", 0.0f},
-    [TELEM_BMS_HIGHEST_CELL_TEMPERATURE] = {"BMS_Highest_Cell_Temperature", 0.0f},
-    [TELEM_HUMIDITY] = {"Humidity", 0.0f},
-    [TELEM_TEMPERATURE] = {"Temperature", 0.0f},
-};
+// telemetry_entry_t telemetry_data[TELEM_COUNT] = {
+//     [TELEM_EMETER_CURRENT] = {"EMeter_Current", 0.0f},
+//     [TELEM_EMETER_VOLTAGE] = {"EMeter_Voltage", 0.0f},
+//     [TELEM_MCM_MOTOR_SPEED] = {"MCM_Motor_Speed", 0.0f},
+//     [TELEM_MCM_DC_BUS_CURRENT] = {"MCM_DCBus_Current", 0.0f},
+//     [TELEM_MCM_DC_BUS_VOLTAGE] = {"MCM_DCBus_Voltage", 0.0f},
+//     [TELEM_MCM_INT_INVERT_ENABLE_STATE] = {"MCM_IntInvert_EnableState", 0.0f},
+//     [TELEM_MCM_INT_INVERTER_STATE] = {"MCM_IntInverter_State", 0.0f},
+//     [TELEM_MCM_TORQUE_FEEDBACK] = {"MCM_Torque_Feedback", 0.0f},
+//     [TELEM_MCM_COMMANDED_TORQUE] = {"MCM_Commanded_Torque", 0.0f},
+//     [TELEM_MCM_TORQUE_COMMAND] = {"MCM_Torque_Command", 0.0f},
+//     [TELEM_MCM_SPEED_COMMAND] = {"MCM_Speed_Command", 0.0f},
+//     [TELEM_MCM_SPEED_MODE_ENABLE] = {"MCM_Speed_Mode_Enable", 0.0f},
+//     [TELEM_TPS1_THROTTLE_PERCENT] = {"TPS1_Throttle_Percent", 0.0f},
+//     [TELEM_BPS0_BRAKE_PERCENT] = {"BPS0_Brake_Percent", 0.0f},
+//     [TELEM_VCU_WSS_FL_S] = {"VCU_WSS_FL_S", 0.0f},
+//     [TELEM_VCU_WSS_FR_S] = {"VCU_WSS_FR_S", 0.0f},
+//     [TELEM_VCU_WSS_RL_S] = {"VCU_WSS_RL_S", 0.0f},
+//     [TELEM_VCU_WSS_RR_S] = {"VCU_WSS_RR_S", 0.0f},
+//     [TELEM_VCU_FAULT_TPS_OUTOFRANGE] = {"VCU_Fault_TPS_OutOfRange", 0.0f},
+//     [TELEM_VCU_FAULT_BPS_OUTOFRANGE] = {"VCU_Fault_BPS_OutOfRange", 0.0f},
+//     [TELEM_VCU_FAULT_TPS_OUTOFSYNC] = {"VCU_FAULT_TPS_OutOfSync", 0.0f},
+//     [TELEM_VCU_FAULT_TPSBPS_IMPLAUSIBLE] = {"VCU_FAULT_TPSBPS_Implausible", 0.0f},
+//     [TELEM_VCU_FAULT_BSPD_SOFTFAULT] = {"VCU_FAULT_BSPD_SoftFault", 0.0f},
+//     [TELEM_VCU_WARNING_LVS_BATTERYLOW] = {"VCU_FAULT_LVS_BatteryLow", 0.0f},
+//     [TELEM_VCU_NOTICE_HVIL_TERMSENSELOST] = {"VCU_NOTICE_HVIL_TermSenseLost", 0.0f},
+//     [TELEM_BATTERY_LOW_VOLTAGE] = {"Battery_Low_Voltage", 0.0f},
+//     [TELEM_VCU_MCM_REGEN_MODE] = {"VCU_MCM_RegenMode", 0.0f},
+//     [TELEM_VCU_MCM_REGEN_MAX_TORQUE] = {"VCU_MCM_Regen_MaxTorqueNm", 0.0f},
+//     [TELEM_SPEED_KPH] = {"Speed_KPH", 0.0f},
+//     [TELEM_STEERING_ANGLE] = {"Steering_Angle", 0.0f},
+//     [TELEM_VCU_BMS_HIGHEST_CELL_TEMP] = {"VCU_BMS_HighestCellTemp", 0.0f},
+//     [TELEM_VCU_BMS_HIGHEST_CELL_VOLTAGE] = {"VCU_BMS_HighestCellVoltage", 0.0f},
+//     [TELEM_VCU_BMS_LOWEST_CELL_VOLTAGE] = {"VCU_BMS_LowestCellVoltage", 0.0f},
+//     [TELEM_VCU_BMS_HIGHEST_CELL_TEMP_DC] = {"VCU_BMS_HighestCellTemp_dC", 0.0f},
+//     [TELEM_VCU_POWERLIMIT_PID_TOTAL_ERROR] = {"VCU_POWERLIMIT_PID_getTotalError", 0.0f},
+//     [TELEM_VCU_POWERLIMIT_PID_PROPORTIONAL] = {"VCU_POWERLIMIT_PID_getProportional", 0.0f},
+//     [TELEM_VCU_POWERLIMIT_PID_INTEGRAL] = {"VCU_POWERLIMIT_PID_getIntegral", 0.0f},
+//     [TELEM_VCU_POWERLIMIT_TORQUE_COMMAND] = {"VCU_POWERLIMIT_getTorqueCommand_Nm", 0.0f},
+//     [TELEM_VCU_LAUNCH_CONTROL_TORQUE_CMD] = {"VCU_LaunchControl_getTorqueCommand_Nm", 0.0f},
+//     [TELEM_VCU_LAUNCH_CONTROL_SLIP_RATIO] = {"VCU_LaunchControl_getSlipRatioScaled", 0.0f},
+//     [TELEM_VCU_LAUNCH_CONTROL_PID_OUTPUT] = {"VCU_LaunchControl_getPidOutput", 0.0f},
+//     [TELEM_VCU_LAUNCH_CONTROL_PID_PROP] = {"VCU_LaunchControl_PID_Proportional", 0.0f},
+//     [TELEM_VCU_LAUNCH_CONTROL_PID_INTEGRAL] = {"VCU_LaunchControl_PID_Integral", 0.0f},
+//     [TELEM_VCU_LAUNCH_CONTROL_PID_TOTAL_ERROR] = {"VCU_LaunchControl_PID_TotalError", 0.0f},
+//     [TELEM_BMS_IMMINENT_CONTACTOR_WARNING] = {"BMS_Imminent_Contactor_Opening_Warning", 0.0f},
+//     [TELEM_BMS_CELL_UNDER_VOLTAGE_FAULT] = {"BMS_Cell_Under_Voltage_Fault", 0.0f},
+//     [TELEM_BMS_CELL_OVER_TEMP_FAULT] = {"BMS_Cell_Over_Temperature_Fault", 0.0f},
+//     [TELEM_BMS_PACK_UNDER_VOLTAGE_FAULT] = {"BMS_Pack_Under_Voltage_Fault", 0.0f},
+//     [TELEM_BMS_ISOLATION_LEAKAGE_FAULT] = {"BMS_Isolation_Leakage_Fault", 0.0f},
+//     [TELEM_BMS_PRECHARGE_FAULT] = {"BMS_Precharge_Fault", 0.0f},
+//     [TELEM_BMS_FAILED_THERMISTOR_FAULT] = {"BMS_Failed_Thermistor_Fault", 0.0f},
+//     [TELEM_BMS_CURRENT_STATE] = {"BMS_Current_State", 0.0f},
+//     [TELEM_BMS_MAIN_CONTACTOR_POS_CLOSED] = {"BMS_Main_Contactor_Positive_Closed", 0.0f},
+//     [TELEM_BMS_MAIN_CONTACTOR_NEG_CLOSED] = {"BMS_Main_Contactor_Negative_Closed", 0.0f},
+//     [TELEM_BMS_PACK_VOLTAGE] = {"Pack_Voltage", 0.0f},
+//     [TELEM_BMS_STATE_OF_CHARGE] = {"BMS_State_Of_Charge", 0.0f},
+//     [TELEM_BMS_HIGHEST_CELL_TEMPERATURE] = {"BMS_Highest_Cell_Temperature", 0.0f},
+//     [TELEM_HUMIDITY] = {"Humidity", 0.0f},
+//     [TELEM_TEMPERATURE] = {"Temperature", 0.0f},
+// };
 
 void print_crash_timestamp() {
     time_t curr_time = get_relative_time();
@@ -811,44 +813,44 @@ void parseCanMessages(uint32_t msg_id, uint8_t data[8]){
 }
 
 //DATA
-void print_all_telemetry(void) {
-    printf("\n=== TELEMETRY DATA ===\n");
-    for (int i = 0; i < TELEM_COUNT; i++) {
-        if (telemetry_data[i].value != 0.0f) { // Only print non-zero values
-            printf("%-35s: %.4f\n", telemetry_data[i].name, telemetry_data[i].value);
-        }
-    }
-    printf("======================\n");
-}
+// void print_all_telemetry(void) {
+//     printf("\n=== TELEMETRY DATA ===\n");
+//     for (int i = 0; i < TELEM_COUNT; i++) {
+//         if (telemetry_data[i].value != 0.0f) { // Only print non-zero values
+//             printf("%-35s: %.4f\n", telemetry_data[i].name, telemetry_data[i].value);
+//         }
+//     }
+//     printf("======================\n");
+// }
 
-// Get by name
-float get_telemetry_value_by_name(const char* name) {
-    for (int i = 0; i < TELEM_COUNT; i++) {
-        if (strcmp(telemetry_data[i].name, name) == 0) {
-            return telemetry_data[i].value;
-        }
-    }
-    printf("Warning: Telemetry name '%s' not found\n", name);
-    return 0.0f;
-}
+// // Get by name
+// float get_telemetry_value_by_name(const char* name) {
+//     for (int i = 0; i < TELEM_COUNT; i++) {
+//         if (strcmp(telemetry_data[i].name, name) == 0) {
+//             return telemetry_data[i].value;
+//         }
+//     }
+//     printf("Warning: Telemetry name '%s' not found\n", name);
+//     return 0.0f;
+// }
 
-// Update by name
-void update_telemetry_value_by_name(const char* name, float value) {
-    for (int i = 0; i < TELEM_COUNT; i++) {
-        if (strcmp(telemetry_data[i].name, name) == 0) {
-            telemetry_data[i].value = value;
-            return;
-        }
-    }
-    printf("Warning: Telemetry name '%s' not found\n", name);
-}
+// // Update by name
+// void update_telemetry_value_by_name(const char* name, float value) {
+//     for (int i = 0; i < TELEM_COUNT; i++) {
+//         if (strcmp(telemetry_data[i].name, name) == 0) {
+//             telemetry_data[i].value = value;
+//             return;
+//         }
+//     }
+//     printf("Warning: Telemetry name '%s' not found\n", name);
+// }
 
-// Initialize telemetry data
-void init_telemetry_data(void) {
-    for (int i = 0; i < TELEM_COUNT; i++) {
-        telemetry_data[i].value = 0.0f;
-    }
-}
+// // Initialize telemetry data
+// void init_telemetry_data(void) {
+//     for (int i = 0; i < TELEM_COUNT; i++) {
+//         telemetry_data[i].value = 0.0f;
+//     }
+// }
 
 void vcu_save_crash_record(crash_record_t *record) {
     nvs_handle_t nvs;
@@ -1012,28 +1014,28 @@ void handle_crash_event() {
 	} 
 }
 
-void dht_test(void *pvParameters)
-{
-    float temperature = 0.0f;
-    float humidity = 0.0f;
+// void dht_test(void *pvParameters)
+// {
+//     float temperature = 0.0f;
+//     float humidity = 0.0f;
 
-    while (1)
-    {
-        if (dht_read_float_data(SENSOR_TYPE, DHT_GPIO, &humidity, &temperature) == ESP_OK)
-        {
-            printf("Humidity: %.1f%% Temp: %.1fC\n", humidity, temperature);
-            update_telemetry_value_by_name("Temperature", temperature);
-            update_telemetry_value_by_name("Humidity", humidity);
-        }
-        else
-        {
-            printf("Could not read data from sensor\n");
-        }
+//     while (1)
+//     {
+//         if (dht_read_float_data(SENSOR_TYPE, DHT_GPIO, &humidity, &temperature) == ESP_OK)
+//         {
+//             printf("Humidity: %.1f%% Temp: %.1fC\n", humidity, temperature);
+//             update_telemetry_value_by_name("Temperature", temperature);
+//             update_telemetry_value_by_name("Humidity", humidity);
+//         }
+//         else
+//         {
+//             printf("Could not read data from sensor\n");
+//         }
 
-        // Wait 2 seconds between readings
-        vTaskDelay(pdMS_TO_TICKS(2000));
-    }
-}
+//         // Wait 2 seconds between readings
+//         vTaskDelay(pdMS_TO_TICKS(2000));
+//     }
+// }
 
 void canTask(void* arg){
  while (1) {
@@ -1124,15 +1126,16 @@ void app_main(void)
     );
 
 // Pin task to core 1 (the "second" core on ESP32)
-    xTaskCreatePinnedToCore(
-        dht_test,                      // Task function
-        "dht_test",                    // Name of task
-        configMINIMAL_STACK_SIZE * 3,  // Stack size
-        NULL,                          // Task parameters
-        6,                             // Priority
-        NULL,                          // Task handle
-        1                              // Core ID (0 = first core, 1 = second core)
-    );
+    // xTaskCreatePinnedToCore(
+    //     dht_test,                      // Task function
+    //     "dht_test",                    // Name of task
+    //     configMINIMAL_STACK_SIZE * 3,  // Stack size
+    //     NULL,                          // Task parameters
+    //     6,                             // Priority
+    //     NULL,                          // Task handle
+    //     1                              // Core ID (0 = first core, 1 = second core)
+    // );
+    humidity_start_task();
 
     xTaskCreatePinnedToCore(icm42670_test, "icm42670_test", configMINIMAL_STACK_SIZE * 8, NULL, 5, NULL, 1);
 
