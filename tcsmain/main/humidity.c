@@ -4,13 +4,13 @@
 #include "freertos/FreeRTOS.h"
 #include "freertos/task.h"
 #include "esp_log.h"
-#include "telemetry.h"   // or whatever header exposes update_telemetry_value_by_name
+#include "telemetry.h"   
 
 // Hardcoded sensor type
 #define SENSOR_TYPE DHT_TYPE_AM2301
 
 // Hardcoded GPIO pin for the data line
-#define DHT_GPIO 45  // Change to your GPIO pin
+#define DHT_GPIO 45  
 
 static void dht_task(void *pvParameters)
 {
@@ -25,7 +25,6 @@ static void dht_task(void *pvParameters)
         } else {
             printf("Could not read data from sensor\n");
         }
-
         vTaskDelay(pdMS_TO_TICKS(2000));
     }
 }

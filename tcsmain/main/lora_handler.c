@@ -6,6 +6,8 @@
 #include <string.h>
 #include "ra01s.h"
 #include "main.h"  // For currentState and saved_mode
+#include "telemetry.h"
+#include "can_lora.h"
 
 static const char *TAG = "LORA_HANDLER";
 
