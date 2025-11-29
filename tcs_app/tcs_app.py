@@ -25,7 +25,7 @@ data_str = ['EMeter_Current', 'EMeter_Voltage', 'MCM_Motor_Speed', 'MCM_DCBus_Cu
 
 
 #INIT FOR DATA GRAPHS
-nsamples = 50
+nsamples = 5
 DATA_LEN = len(data_str)
 time_x=[0.0]*nsamples
 data_arrays = []
@@ -179,7 +179,7 @@ def update_all():
     global data_arrays
     t_u = time.time()
     while True:
-        for i in range(20):
+        for i in range(10):
             udr.update_data()
             # data_arrays[i] = udr.data_arrays[i]
         
@@ -249,7 +249,8 @@ def update_all():
         #error check
         faults = udr.faults
         for i in range(FAULT_LEN):
-            if(faults[i] == 1):
+            if(faults[i] > 0):
+                print(faults)
                 msg = f"FAULT OCCURRED OF TYPE: {fault_str[i]}"
                 dpg.add_text(msg, parent='log_container', color=FAULT_COLOR) #red tuple
                 dpg.set_y_scroll('log_container', 9999) #auto scroll function
@@ -386,7 +387,6 @@ def power_calc(current, volt):
     dpg.set_y_scroll('log_container', 9999) #auto scroll function
 
 
-#dpg.show_font_manager()
 
 dpg.create_context()
 dpg.create_viewport(title='TCS App', width=1400, height=1000)
@@ -400,8 +400,7 @@ thread1 = threading.Thread(target=update_all)
 thread2 = threading.Thread(target=data_count)
 thread1.start()
 thread2.start()
-# thread3 = threading.Thread(target=udr.update_data())
-# thread3.start()
+
 
 dpg.start_dearpygui()
 

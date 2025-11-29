@@ -151,7 +151,9 @@ def update_data():
         #fault check
         if (res[DATA_TYPE] in fault_str):
             fault_index = fault_str.index(res[DATA_TYPE])
-            faults[fault_index] = 1
+            faults[fault_index] = int(res[DATA_VALUE])
+            #print(res)
+            #print(faults[fault_index])
 
         # if (res[DATA_TYPE] in data_str):
         #     data_index = data_str.index(res[DATA_TYPE])
@@ -165,14 +167,14 @@ def update_data():
             case 'EMeter_Current':
                 em_curr.append(int(res[DATA_VALUE]))
                 count = count + 1
-                print(res)
-                print('em_curr: ', em_curr[-1])
+                #print(res)
+                #print('em_curr: ', em_curr[-1])
 
             case 'EMeter_Voltage':
                 em_volt.append(int(res[DATA_VALUE]))
                 count = count + 1
-                print(res)
-                print('em_volt: ', em_volt[-1])
+                #print(res)
+                #print('em_volt: ', em_volt[-1])
 
             case 'MCM_Motor_Speed':
                 motor_speed.append(int(res[DATA_VALUE]))
