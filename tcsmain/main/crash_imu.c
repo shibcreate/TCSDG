@@ -9,6 +9,9 @@
 #include "esp_log.h"
 
 const char *TAG_IMU = "IMU";
+
+TaskHandle_t imuTaskHandle = NULL;
+
 // RTC start time
 time_t start_time = 1700286000; // Update as needed
 
@@ -261,7 +264,7 @@ void start_imu_task(void){
         configMINIMAL_STACK_SIZE * 8, 
         NULL, 
         5, 
-        NULL, 
+        &imuTaskHandle, 
         1
     );
 }

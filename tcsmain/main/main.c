@@ -92,8 +92,23 @@ static const twai_general_config_t g_config =
 
 void stateManagerTask(void* parameter){
     currentState = SENDING_STATE;
-    
+    FINITE_STATES lastState = currentState;
     for(;;){
+
+        if (currentState != lastState) {
+            // State transition detected
+            if (currentState == SENDING_STATE) {
+                if (imuTaskHandle != NULL) {
+                    vTaskResume(imuTaskHandle);
+                }
+            } else if (currentState == RECEIVING_STATE) {
+                if (imuTaskHandle != NULL) {
+                    vTaskSuspend(imuTaskHandle);
+                }
+            }
+            lastState = currentState;
+        }
+
         switch (currentState)
         {
         case SENDING_STATE: //Master sends to lora and receives from can
@@ -113,6 +128,7 @@ void stateManagerTask(void* parameter){
             printf("Default\n");
             break;
         }
+        vTaskDelay(pdMS_TO_TICKS(10));
 
     }
 }
@@ -171,11 +187,12 @@ void app_main(void)
     lora_handler_init();
     lora_handler_start();
 
+
 	xTaskCreate(stateManagerTask, "stateManager", 4096, NULL, 5, &stateManager);
 
   	start_can_task();
-    humidity_start_task();
     start_imu_task();
+    humidity_start_task();
 
     vTaskSuspend(NULL);
 

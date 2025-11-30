@@ -616,7 +616,7 @@ void handle_lora_can_command(void) {
 
     esp_err_t ret = twai_transmit(&msg, pdMS_TO_TICKS(100));
     if (ret == ESP_OK) {
-        ESP_LOGI("CAN", "Sent %s command on CAN ID 0x%03" PRIX32 " value=%d",
+        ESP_LOGI("CAN:", "Sent %s command on CAN ID 0x%03" PRIX32 " value=%d",
                  lora_cmd.key, msg.identifier, msg.data[0]);
         rgb_led_set_color(&led1, YELLOW);
     } else {
@@ -626,3 +626,4 @@ void handle_lora_can_command(void) {
     // Clear the flag
     lora_cmd.new_command = false;
 }
+
