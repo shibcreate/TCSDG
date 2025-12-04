@@ -229,7 +229,7 @@ void icm42670_test(void *pvParameters)
 
     int16_t raw_reading;
     uint8_t data_register;
-    uint8_t CRASH_THRESHOLD = 18;
+    uint8_t CRASH_THRESHOLD = 26;
     /* select which acceleration or gyro value should be read: */
     // data_register = ICM42670_REG_ACCEL_DATA_X1;
     // data_register = ICM42670_REG_ACCEL_DATA_Y1;
@@ -241,8 +241,10 @@ void icm42670_test(void *pvParameters)
     // now poll selected accelerometer or gyro raw value directly from registers
     while (1)
     {
+        
         ESP_ERROR_CHECK(icm42670_read_raw_data(&dev, data_register, &raw_reading));
 
+        vTaskDelay(pdMS_TO_TICKS(1500));
         ESP_LOGI(TAG_IMU, "Raw accelerometer / gyro reading: %d", raw_reading);
 
         if (raw_reading > CRASH_THRESHOLD) {

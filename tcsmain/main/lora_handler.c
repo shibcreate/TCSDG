@@ -189,9 +189,9 @@ static void task_lora_receive(void *pvParameters) {
     int value;
 
     while (1) {
+        
         uint8_t rxData[256];
         uint8_t rxLen = LoRaReceive(rxData, sizeof(rxData));
-
         if (rxLen > 0) {
             rxData[rxLen] = '\0';
             ESP_LOGI("LoRa", "Received: %s", rxData);

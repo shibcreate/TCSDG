@@ -95,19 +95,19 @@ void stateManagerTask(void* parameter){
     FINITE_STATES lastState = currentState;
     for(;;){
 
-        if (currentState != lastState) {
-            // State transition detected
-            if (currentState == SENDING_STATE) {
-                if (imuTaskHandle != NULL) {
-                    vTaskResume(imuTaskHandle);
-                }
-            } else if (currentState == RECEIVING_STATE) {
-                if (imuTaskHandle != NULL) {
-                    vTaskSuspend(imuTaskHandle);
-                }
-            }
-            lastState = currentState;
-        }
+        // if (currentState != lastState) {
+        //     // State transition detected
+        //     if (currentState == SENDING_STATE) {
+        //         if (imuTaskHandle != NULL) {
+        //             vTaskResume(imuTaskHandle);
+        //         }
+        //     } else if (currentState == RECEIVING_STATE) {
+        //         if (imuTaskHandle != NULL) {
+        //             vTaskSuspend(imuTaskHandle);
+        //         }
+        //     }
+        //     lastState = currentState;
+        // }
 
         switch (currentState)
         {
